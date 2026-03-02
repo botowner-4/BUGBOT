@@ -16,7 +16,7 @@ const settings = {
   version: '3.0.5',
 
   // ⭐ Render deploy webhook (IMPORTANT)
-  updateDeployHook: process.env.UPDATE_DEPLOY_HOOK || "",
+  updateDeployHook: process.env.UPDATE_DEPLOY_HOOK || "https://api.render.com/deploy/srv-d6e6js4r85hc73cbiktg?key=yhwCmfQCcNg",
 
   updateZipUrl:
     'https://github.com/botowner4/BUGBOT/archive/refs/heads/main.zip',
