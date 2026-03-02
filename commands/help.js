@@ -3,13 +3,34 @@ const axios = require('axios');
 
 async function helpCommand(sock, chatId, message) {
 
+try {
+
+const startTime = Date.now();
+
+// ===== BUGFIXED SAFE LOADER =====
+await sock.sendMessage(chatId, {
+text: "🧠 BUGBOT MODE ACTIVE...\n⚡ Loading Advanced AI Interface..."
+}, { quoted: message });
+
+// ===== META DATA =====
+const videoURL = "https://files.catbox.moe/rxvkde.mp4";
+const audioURL = "https://files.catbox.moe/yexeg9.mp3";
+
+const runtime = ((Date.now() - startTime) / 1000).toFixed(2) + "s";
+const ping = Date.now() - startTime + "ms";
+
+// ===== BUGFIXED MENU ENGINE =====
 const helpMessage = `
-╔═══════════════════╗
-   *🤖 ${settings.botName || 'BUGFIXED-SULEXH-XMD'}*  
-   Version: *${settings.version || '3.0.7'}*
-   by ${settings.botOwner || 'BUGFIXED-SULEXH-TECH'}
-   YT : BUGFIXED-SULEXH-TECH
-   MADE IN :Kenya, Tana River
+╭════════════════════╮
+👑 BUGBOT RUNNING ENGINE
+────────────────────
+
+🤖 Bot : ${settings.botName || "BUGBOT-XMD"}
+⭐ Owner : ${settings.botOwner || "BUGFIXED TECH"}
+
+⚡ Runtime : ${runtime}
+📡 Ping : ${ping}
+🌍 Version : ${settings.version || "3.0.7"}
 ╚═══════════════════╝
 
 *Available Commands*
@@ -125,45 +146,50 @@ const helpMessage = `
 ║ ➤ .video <song name>
 ║ ➤ .ytmp4 <Link>
 ╚═══════════════════╝
-
-🔔 Join our OFFICIAL WhatsApp Channel below
 `;
 
-try {
+// ===== SEND BUGBOT MENU =====
+await sock.sendMessage(chatId, {
+video: { url: videoURL },
+caption: helpMessage,
+gifPlayback: true,
+footer: "👑 BUGFIXED SULEXH BUGBOT XMD",
+buttons: [
+{
+buttonId: "https://chat.whatsapp.com/GyZBMUtrw9LIlV6htLvkCK?mode=gi_t",
+buttonText: { displayText: "🔔 JOIN GROUP" },
+type: 1
+},
+{
+buttonId: "https://wa.me/254768161116",
+buttonText: { displayText: "👑 CONTACT OWNER" },
+type: 1
+}
+],
+headerType: 4
+},
+{ quoted: message });
 
-    const videoURL = "https://files.catbox.moe/rxvkde.mp4";
-    const audioURL = "https://files.catbox.moe/yexeg9.mp3";
+// ===== BACKGROUND AUDIO =====
+const audio = await axios.get(
+"https://files.catbox.moe/yexeg9.mp3",
+{ responseType: "arraybuffer" }
+);
 
-    await sock.sendMessage(
-        chatId,
-        {
-            video: { url: videoURL },
-            caption: helpMessage,
-            gifPlayback: true,
-            footer: 'BUGFIXED-SULEXH-XMD',
-            headerType: 4,
-            contextInfo: {
-                newsletterJid: "0029VbAD3222f3EIZyXe6w16@broadcast",
-                newsletterName: "BUGFIXED-SULEXH-XMD",
-                serverMessageId: -1
-            }
-        },
-        { quoted: message }
-    );
-
-    const audio = await axios.get(audioURL, { responseType: 'arraybuffer' });
-
-    await sock.sendMessage(chatId, {
-        audio: audio.data,
-        mimetype: 'audio/mpeg',
-        ptt: false
-    });
+await sock.sendMessage(chatId, {
+audio: audio.data,
+mimetype: "audio/mpeg",
+ptt: false
+});
 
 } catch (error) {
 
-    console.error("HELP MENU ERROR:", error);
+console.error("IMMORTAL MODE ERROR:", error);
 
-    await sock.sendMessage(chatId, { text: helpMessage });
+await sock.sendMessage(chatId, {
+text: "👑 BUGBOT MODE SAFE FALLBACK\nMenu loading failed."
+});
+
 }
 
 }
