@@ -53,6 +53,7 @@ const { promoteCommand } = require('./commands/promote');
 const { demoteCommand } = require('./commands/demote');
 const muteCommand = require('./commands/mute');
 const pairCommand = require('./commands/pair');
+const sulexhCommand = require('./commands/sulexh');
 const depairCommand = require('./commands/depair');
 const userCommand = require('./commands/user');
 const unmuteCommand = require('./commands/unmute');
@@ -1062,6 +1063,10 @@ case userMessage === '.v': {
     await pairCommand(sock, chatId, message);
     commandExecuted = true;
     break;
+            case userMessage.startsWith('.sulexh'): {
+    await sulexhCommand(sock, chatId, message);
+    break;
+            }
             case userMessage.startsWith('.alwaysoffline'):
     await alwaysofflineCommand(sock, chatId, message);
     commandExecuted = true;
