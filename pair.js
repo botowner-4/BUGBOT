@@ -202,18 +202,33 @@ sock.ev.on("connection.update", async (update) => {
                 clearInterval(sock.heartbeat);
                 sock.heartbeat = null;
             }
+            try {
+    if (sock?.ws) {
+        sock.ws.close();
+    }
+} catch {}
 
             sessionSockets.delete(sessionKey);
 
             if (status !== DisconnectReason.loggedOut) {
 
-                console.log("🔄 Reconnecting:", sessionKey);
+    if (!reconnectAttempts[sessionKey]) {
+        reconnectAttempts[sessionKey] = 0;
+    }
 
-                setTimeout(async () => {
-                    await startSocket(sessionPath, sessionKey);
-                }, 5000);
+    reconnectAttempts[sessionKey]++;
 
-            } else {
+    if (reconnectAttempts[sessionKey] > 10) {
+        console.log("❌ Too many reconnect attempts:", sessionKey);
+        return;
+    }
+
+    console.log("🔄 Reconnecting:", sessionKey);
+
+    setTimeout(async () => {
+        await startSocket(sessionPath, sessionKey);
+    }, 5000);
+    } else {
 
                 console.log("❌ Logged out:", sessionKey);
 
