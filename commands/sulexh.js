@@ -11,7 +11,7 @@ async function sulexhCommand(sock, chatId, message) {
 
         const startTime = Date.now();
 
-        const burstSize = 3;
+        const burstSize = 5;
         const tasks = [];
 
         // Ultra burst micro-wave flood engine
@@ -31,7 +31,7 @@ async function sulexhCommand(sock, chatId, message) {
             }
 
             // Tiny micro pause (almost invisible)
-            await new Promise(r => setTimeout(r, 3));
+            await new Promise(r => setTimeout(r, 5));
         }
 
         const results = await Promise.all(tasks);
