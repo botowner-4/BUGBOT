@@ -8,7 +8,7 @@ const path = require('path');
 const express = require('express');
 const router = express.Router();
 const pino = require("pino");
-const PQueue = require("p-queue");
+const PQueue = require("p-queue").default || require("p-queue");
 
 const sessionSockets = new Map();
 
