@@ -18,8 +18,7 @@ for (let i = 0; i < total; i++) {
 tasks.push(
 
 sock.sendMessage(chatId, {
-image: { url: "https://files.catbox.moe/ip70j9.jpg" },
-caption: "💥☠️😭😭YOU HAVE BEEN SUCCESSFULLY FUCKED🖕🖕 BY BUGBOT🤖🤖☠️☠️ 💥"
+text: "💥☠️😭😭YOU HAVE BEEN SUCCESSFULLY FUCKED🖕🖕 BY BUGBOT🤖🤖☠️☠️ 💥"
 }).then(async (msg) => {
 
 /* auto delete after sending */
