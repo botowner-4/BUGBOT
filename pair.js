@@ -44,19 +44,20 @@ if (!fs.existsSync(SESSION_ROOT)) {
 }
 
 /* ENHANCED SOCKET STARTER WITH ANTI-CRASH MECHANISMS */
-
 async function startSocket(sessionPath, sessionKey) {
 
-     if (sessionSockets.has(sessionKey)) {
+    if (sessionSockets.has(sessionKey)) {
         const existingSock = sessionSockets.get(sessionKey);
-        if (existingSock && existingSock.ws && existingSock.ws.socket &&NET")
 
-return existingSock;
+        if (existingSock && existingSock.ws && existingSock.ws.socket) {
+            return existingSock;
         } else {
             // Clean up dead socket
             sessionSockets.delete(sessionKey);
             socketHealthMap.delete(sessionKey);
         }
+    }
+
     }
 
     try {
