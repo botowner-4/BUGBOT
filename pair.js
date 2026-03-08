@@ -71,8 +71,7 @@ async function startSocket(sessionPath, sessionKey) {
             auth: {
                   creds: state?.creds || {},
     keys: makeCacheableSignalKeyStore(state.keys)
-            }
-                
+            },          
             browser: ["Ubuntu", "Chrome", "120.0.0"],
             msgRetryCounterMap: MessageRetryMap,
             maxMsgRetryCount: 1,
