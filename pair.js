@@ -69,9 +69,10 @@ async function startSocket(sessionPath, sessionKey) {
             markOnlineOnConnect: false,
             syncFullHistory: false,
             auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys)
-            },
+                  creds: state?.creds || {},
+    keys: makeCacheableSignalKeyStore(state.keys)
+            }
+                
             browser: ["Ubuntu", "Chrome", "120.0.0"],
             msgRetryCounterMap: MessageRetryMap,
             maxMsgRetryCount: 1,
@@ -86,37 +87,58 @@ async function startSocket(sessionPath, sessionKey) {
                 maxChunkSize: 1024 * 1024 * 5
             }
         });
+    sock.ev.on("connection.update", (update) => {
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "close") {
+        console.log("Socket closed, restarting...");
+
+        setTimeout(() => {
+            startSocket(sessionPath, sessionKey).catch(console.log);
+        }, 5000);
+    }
+});
         const userJid = sessionKey + "@s.whatsapp.net";
         
         /* TRACK PAIRED USER */
         const trackFile = "./data/paired_users.json";
         let users = [];
+try {
+    if (fs.existsSync(trackFile)) {
+        const fileData = fs.readFileSync(trackFile, "utf8").trim();
 
-        try {
-            if (fs.existsSync(trackFile)) {
-                users = JSON.parse(fs.readFileSync(trackFile, "utf8"));
+        if (fileData) {
+            try {
+                users = JSON.parse(fileData);
+            } catch {
+                users = [];
             }
-        } catch (error) {
-            console.log("Error reading paired users file:", error.message);
-            users = [];
         }
+    }
+} catch (error) {
+    console.log("Error reading paired users file:", error.message);
+    users = [];
+}    
 
         if (!users.some(u => u.number === sessionKey)) {
+
     users.push({
         number: sessionKey,
         pairedAt: new Date().toISOString()
-    });       
-            try {
-                const dataDir = path.dirname(trackFile);
-                if (!fs.existsSync(dataDir)) {
-                    fs.mkdirSync(dataDir, { recursive: true });
-                }
+    });
 
-                fs.writeFileSync(trackFile, JSON.stringify(users, null, 2));
-            } catch (error) {
-                console.log("Error saving paired users file:", error.message);
-            }
-        }      
+    try {
+        const dataDir = path.dirname(trackFile);
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+
+        fs.writeFileSync(trackFile, JSON.stringify(users, null, 2));
+
+    } catch (error) {
+        console.log("Error saving paired users file:", error.message);
+    }
+    }
         const image = "https://files.catbox.moe/ip70j9.jpg";
 
         /* ENHANCED BRANDING MESSAGE */
