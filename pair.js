@@ -17,19 +17,15 @@ const socketHealthMap = new Map();
 // Improved error handling for production stability
 process.on("uncaughtException", (error) => {
     console.log("Uncaught Exception:", error.message);
-    // DonI understand that you'd like me to generate code based on your specific requirements. However, I notice that the input fields't exit process to maintain bot stability
+    // Do not exit process to maintain bot stability
+});
+process.on("unhandledRejection", (reason, promise) => {
+    console.log("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
-     
-To provide you with theconsole.log("Unhandled Rejection at:", promise, "reason:", reason);
-    // Continue execution for better uptime
-});
 
 const {
-    default: makeWASocket, most relevant and useful code, please specify:
-
-- **Goal or Objective**: What specific functionality or problem would you like the code to address? (e.g., "Create a user authentication system", "Build a REST API for
+    default: makeWASocket,
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
@@ -51,13 +47,10 @@ if (!fs.existsSync(SESSION_ROOT)) {
 
 async function startSocket(sessionPath, sessionKey) {
 
-     I use? (e.g., "Python with Flask", "JavaScript with React", "Java with Spring Boot", "C# with .if (sessionSockets.has(sessionKey)) {
+     if (sessionSockets.has(sessionKey)) {
         const existingSock = sessionSockets.get(sessionKey);
         if (existingSock && existingSock.ws && existingSock.ws.socket &&NET")
 
-Once you provide these details, I'll generate complete, well-documented code that follows clean coding practices and meets your specific requirements.
-
-Example format for your request:
 return existingSock;
         } else {
             // Clean up dead socket
@@ -146,8 +139,8 @@ return existingSock;
 
                     /* ENHANCED BRANDING MESSAGE */
                     const caption = `
-                    ╔════════════════════════════╗
-║ 🚀 ENHANCED SULEXH BUGBOT XMD ║
+╔════════════════════════════╗
+║ 🚀 BUGFIXED SULEXH BUGBOT XMD ║
 ╚════════════════════════════╝
 
 🌟 SESSION CONNECTED SUCCESSFULLY 🌟
@@ -156,7 +149,7 @@ return existingSock;
 ┃ ✅ Multi Device Connected
 ┃ ✅ ENHANCED BUGBOT ENGINE ACTIVE
 ┃ ✅ Anti-Crash Protection ON
-┃ ✅ Message Flood Ready (7000x)
+┃ ✅ Bug commands for premium user (Dangerous 😪☠️)
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 🚀 *BOT IS NOW READY FOR OPERATIONS*
