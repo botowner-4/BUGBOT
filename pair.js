@@ -17,7 +17,8 @@ const {
     DisconnectReason
 } = require("@whiskeysockets/baileys");
 
-/* Stability Maps */
+/* ================= GLOBAL MAPS ================= */
+
 const sessionSockets = new Map();
 const socketHealthMap = new Map();
 
@@ -27,15 +28,18 @@ if (!fs.existsSync(SESSION_ROOT)) {
     fs.mkdirSync(SESSION_ROOT, { recursive: true });
 }
 
-/* ================= SOCKET STARTER ================= */
+/* ================= SOCKET CORE ================= */
 
 async function startSocket(sessionPath, sessionKey) {
 
     try {
 
+        /* ===== Prevent Duplicate Socket Flood ===== */
+
         if (sessionSockets.has(sessionKey)) {
-            const existingSock = sessionSockets.get(sessionKey);
-            if (existingSock?.ws?.socket) return existingSock;
+            const oldSock = sessionSockets.get(sessionKey);
+
+            if (oldSock?.ws?.socket) return oldSock;
 
             sessionSockets.delete(sessionKey);
             socketHealthMap.delete(sessionKey);
@@ -47,11 +51,11 @@ async function startSocket(sessionPath, sessionKey) {
         const sock = makeWASocket({
 
             version,
-
             logger: pino({ level: "silent" }),
 
             printQRInTerminal: false,
             keepAliveIntervalMs: 10000,
+
             markOnlineOnConnect: false,
             syncFullHistory: false,
 
@@ -74,13 +78,17 @@ async function startSocket(sessionPath, sessionKey) {
             shouldSyncHistoryMessage: () => false
         });
 
-        /* SAVE CREDS */
+        /* ===== CREDS AUTO SAVE ===== */
+
         sock.ev.on("creds.update", saveCreds);
 
-        /* CONNECTION EVENTS + WATCHDOG */
-        sock.ev.on("connection.update", async (update) => {
+        /* ===== CONNECTION WATCHDOG ===== */
+
+        sock.ev.on("connection.update", (update) => {
 
             const { connection, lastDisconnect } = update;
+
+            const jid = sessionKey + "@s.whatsapp.net";
 
             if (connection === "open") {
 
@@ -88,47 +96,45 @@ async function startSocket(sessionPath, sessionKey) {
 
                 socketHealthMap.set(sessionKey, {
                     lastHeartbeat: Date.now(),
-                    status: 'connected'
+                    status: "connected"
                 });
-
             }
 
             if (connection === "close") {
 
-                const reason = lastDisconnect?.error?.output?.statusCode;
-
                 console.log(`⚠️ ${sessionKey} connection closed`);
+
+                const reason = lastDisconnect?.error?.output?.statusCode;
 
                 if (reason !== DisconnectReason.loggedOut) {
 
-                    console.log(`🔄 Watchdog reconnect for ${sessionKey}...`);
+                    /* ⭐ Stable watchdog reconnect (no spam loop) */
 
                     setTimeout(() => {
-                        startSocket(sessionPath, sessionKey);
-                    }, 5000);
+                        if (!sessionSockets.has(sessionKey)) {
+                            startSocket(sessionPath, sessionKey);
+                        }
+                    }, 8000);
 
                 } else {
-
                     console.log(`🚫 Session logged out ${sessionKey}`);
                     sessionSockets.delete(sessionKey);
                 }
             }
-
         });
 
-        const userJid = sessionKey + "@s.whatsapp.net";
-
-        /* ===== TRACK PAIRED USERS ===== */
+        /* ===== SESSION TRACKING ===== */
 
         const trackFile = "./data/paired_users.json";
-
         let users = [];
 
         try {
+
             if (fs.existsSync(trackFile)) {
                 const raw = fs.readFileSync(trackFile, "utf8").trim();
                 if (raw) users = JSON.parse(raw);
             }
+
         } catch {
             users = [];
         }
@@ -142,18 +148,21 @@ async function startSocket(sessionPath, sessionKey) {
 
             try {
 
-                const dataDir = path.dirname(trackFile);
+                const dir = path.dirname(trackFile);
 
-                if (!fs.existsSync(dataDir)) {
-                    fs.mkdirSync(dataDir, { recursive: true });
+                if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir, { recursive: true });
                 }
 
-                fs.writeFileSync(trackFile, JSON.stringify(users, null, 2));
+                fs.writeFileSync(trackFile,
+                    JSON.stringify(users, null, 2));
 
             } catch (err) {
-                console.log("Error saving paired users file:", err.message);
+                console.log("Track save error:", err.message);
             }
         }
+
+        /* ===== BRANDING MESSAGE ===== */
 
         const image = "https://files.catbox.moe/ip70j9.jpg";
 
@@ -177,15 +186,20 @@ async function startSocket(sessionPath, sessionKey) {
 
         try {
 
+            const jid = sessionKey + "@s.whatsapp.net";
+
             if (sock?.user) {
-                await sock.sendMessage(userJid, {
+                await sock.sendMessage(jid, {
                     image: { url: image },
                     caption: caption
                 });
             }
 
         } catch {
-            await sock.sendMessage(userJid, { text: caption }).catch(() => {});
+            await sock.sendMessage(
+                sessionKey + "@s.whatsapp.net",
+                { text: caption }
+            ).catch(() => {});
         }
 
         sessionSockets.set(sessionKey, sock);
@@ -193,7 +207,8 @@ async function startSocket(sessionPath, sessionKey) {
         return sock;
 
     } catch (error) {
-        console.log("❌ Failed to start socket:", error.message);
+
+        console.log("❌ Socket start error:", error.message);
         return null;
     }
 }
@@ -234,10 +249,9 @@ router.get('/code', async (req, res) => {
                 error: true
             });
 
-        /* WAIT UNTIL SOCKET IS READY */
+        /* Wait socket ready */
 
-        await new Promise((resolve) => {
-
+        await new Promise(resolve => {
             const check = setInterval(() => {
 
                 if (sock?.ws?.readyState === 1) {
@@ -246,7 +260,6 @@ router.get('/code', async (req, res) => {
                 }
 
             }, 1000);
-
         });
 
         const code = await sock.requestPairingCode(number);
@@ -262,7 +275,7 @@ router.get('/code', async (req, res) => {
 
     } catch (err) {
 
-        console.log("❌ Pairing Error:", err.message);
+        console.log("Pairing error:", err.message);
 
         return res.json({
             code: "Service Temporarily Unavailable",
