@@ -1,197 +1,298 @@
-const settings = require('../settings');
-const axios = require('axios');
+const settings = require('../settings')
+const axios = require("axios")
 
 async function helpCommand(sock, chatId, message) {
-  try {
-    const startTime = Date.now();
 
-    // ===== SAFE LOADER =====
-    await sock.sendMessage(chatId, {
-      text: "🐉 BUGBOT SYSTEM BOOTING...\n⚡ Loading Ultimum Destroyer Menu..."
-    }, { quoted: message });
+try {
 
-    // ===== META DATA =====
-    const imageURL = "https://files.catbox.moe/ip70j9.jpg";
+const banners = [
+"https://files.catbox.moe/ip70j9.jpg"
+]
 
-    const runtime = ((Date.now() - startTime) / 1000).toFixed(2) + "s";
-    const ping = Date.now() - startTime + "ms";
+const banner = banners[Math.floor(Math.random()*banners.length)]
 
-    // ===== MENU CONTENT =====
-    const helpMessage = `
-╔════════════════════════════════════╗
-🐉 BUGFIXED SULEXH TECH BOT V10
-🌌  NEVER USE HARM OTHERS🤖🤖☠️☠️
-╚════════════════════════════════════╝
+// preload image once (fast menu)
+const { data } = await axios.get(banner,{responseType:"arraybuffer"})
 
-👤 User : ${message.pushName || "User"}
-🤖 Bot  : ${settings.botName || "BUGBOT V10"}
-⭐ Owner: ${settings.botOwner || "BUGFIXED SULEXH TECH"}
+const media = await sock.prepareWAMessageMedia(
+{ image: Buffer.from(data) },
+{ upload: sock.waUploadToServer }
+)
 
-⚡ Runtime : ${runtime}
-📡 Ping : ${ping}
-────────────────────────────
+// ================= GENERAL =================
+const GENERAL = `
+╭────────────────────⬣
+│ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐ | ✨ | ⭐
+│ ★ ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐
+│ ★ ✨
+│
+│ ⭐◇GENERAL◇⭐
+│──────────────
+│ .help
+│ .menu
+│ .alive
+│ .ping
+│ .owner
+│ .fact
+│ .joke
+│ .quote
+│ .weather <city>
+│ .news
+│ .tts <text>
+│ .attp <text>
+│ .lyrics <song>
+│ .8ball <question>
+│ .groupinfo
+│ .staff
+│ .admins
+│ .vv
+│ .v
+│ .trt <text> <lang>
+│ .ss <link>
+│ .jid
+│ .url
+│ .quran menu
+│ .bugmenu
+╰────────────────────⬣
+`
 
-▛▀ GENERAL MENU ▀▜
-▌ .help
-▌ .menu
-▌ .alive
-▌ .ping
-▌ .owner
-▌ .fact
-▌ .joke
-▌ .quote
-▌ .weather <city>
-▌ .news
-▌ .tts <text>
-▌ .attp <text>
-▌ .lyrics <song_title>
-▌ .8ball <question>
-▌ .groupinfo
-▌ .staff / .admins
-▌ .vv
-▌ .v
-▌ .trt <text> <lang>
-▌ .ss <link>
-▌ .jid
-▌ .url
-▌ .quran menu
-▌ .BUG MENU (premium)
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ================= ADMIN =================
+const ADMIN = `
+╭────────────────────⬣
+│ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐ | ✨ | ⭐
+│ ★ ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐
+│ ★ ✨
+│
+│ ⭐◇ADMIN◇⭐
+│──────────────
+│ .ban @user
+│ .promote @user
+│ .demote @user
+│ .mute <minutes>
+│ .unmute
+│ .delete
+│ .del
+│ .kick @user
+│ .warnings @user
+│ .warn @user
+│ .antilink
+│ .antibadword
+│ .clear
+│ .tag <message>
+│ .tagall
+│ .tagnotadmin
+│ .hidetag <message>
+│ .chatbot
+│ .resetlink
+│ .antitag on/off
+│ .welcome on/off
+│ .goodbye on/off
+│ .setgdesc
+│ .setgname
+│ .setgpp
+╰────────────────────⬣
+`
 
-▛▀ ADMIN COMMANDS ▀▜
-▌ .ban @user
-▌ .promote @user
-▌ .demote @user
-▌ .mute <minutes>
-▌ .unmute
-▌ .delete / .del
-▌ .kick @user
-▌ .warnings @user
-▌ .warn @user
-▌ .antilink
-▌ .antibadword
-▌ .clear
-▌ .tag <message>
-▌ .tagall
-▌ .tagnotadmin
-▌ .hidetag <message>
-▌ .chatbot
-▌ .resetlink
-▌ .antitag <on/off>
-▌ .welcome <on/off>
-▌ .goodbye <on/off>
-▌ .setgdesc <description>
-▌ .setgname <new name>
-▌ .setgpp (reply to image)
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ================= OWNER =================
+const OWNER = `
+╭────────────────────⬣
+│ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐ | ✨ | ⭐
+│ ★ ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐
+│ ★ ✨
+│
+│ ⭐◇OWNER◇⭐
+│──────────────
+│ .mode public
+│ .mode private
+│ .clearsession
+│ .antidelete
+│ .cleartmp
+│ .update
+│ .settings
+│ .setpp
+│ .autoreact
+│ .autostatus
+│ .autostatus react
+│ .autotyping
+│ .autorecording
+│ .alwaysonline
+│ .autoread
+│ .anticall
+│ .pmblocker
+│ .pmblocker setmsg
+│ .setmention
+│ .mention
+╰────────────────────⬣
+`
 
-▛▀ OWNER COMMANDS ▀▜
-▌ .mode <public/private>
-▌ .clearsession
-▌ .antidelete
-▌ .cleartmp
-▌ .update
-▌ .settings
-▌ .setpp <reply to image>
-▌ .autoreact <on/off>
-▌ .autostatus <on/off>
-▌ .autostatus react <on/off>
-▌ .autotyping <on/off>
-▌ .autorecording <on/off>
-▌ .alwaysonline <on/off>
-▌ .autoread <on/off>
-▌ .anticall <on/off>
-▌ .pmblocker <on/off/status>
-▌ .pmblocker setmsg <text>
-▌ .setmention <reply to msg>
-▌ .mention <on/off>
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ================= BUG =================
+const BUG = `
+╭────────────────────⬣
+│ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐ | ✨ | ⭐
+│ ★ ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐
+│ ★ ✨
+│
+│ ⭐◇BUGFIXED◇⭐
+│──────────────
+│ .pair <number>
+│ .user
+│ .depair <number>
+╰────────────────────⬣
+`
 
-▛▀ BUGFIXED SULEXH COMMANDS ▀▜
-▌ .pair <number>
-▌ .user
-▌ .depair <number>
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ================= IMAGE =================
+const IMAGE = `
+╭────────────────────⬣
+│ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐ | ✨ | ⭐
+│ ★ ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐
+│ ★ ✨
+│
+│ ⭐◇IMAGE LAB◇⭐
+│──────────────
+│ .sticker
+│ .simage
+│ .blur
+│ .removebg
+│ .remini
+│ .crop
+│ .meme
+│ .take <packname>
+│ .emojimix
+│ .tgsticker
+│ .igs
+│ .igsc
+╰────────────────────⬣
+`
 
-▛▀ IMAGE & STICKER LAB ▀▜
-▌ .sticker
-▌ .simage
-▌ .blur
-▌ .removebg
-▌ .remini
-▌ .crop
-▌ .meme
-▌ .take <packname>
-▌ .emojimix <emj1>+<emj2>
-▌ .tgsticker <link>
-▌ .igs <insta link>
-▌ .igsc <insta link>
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ================= DOWNLOAD =================
+const DOWNLOAD = `
+╭────────────────────⬣
+│ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐ | ✨ | ⭐
+│ ★ ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐
+│ ★ ✨
+│
+│ ⭐◇DOWNLOAD◇⭐
+│──────────────
+│ .play <song>
+│ .song <song>
+│ .spotify
+│ .instagram
+│ .facebook
+│ .tiktok
+│ .video
+│ .ytmp4
+│ .mediafire
+│ .apk
+╰────────────────────⬣
+`
 
-▛▀ DOWNLOADERS ▀▜
-▌ .play <song_name>
-▌ .song <song_name>
-▌ .spotify <query>
-▌ .instagram <link>
-▌ .facebook <link>
-▌ .tiktok <link>
-▌ .video <song_name>
-▌ .ytmp4 <link>
-▌ .mediafire <link>
-▌ .apk <link>
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ================= FUN =================
+const FUN = `
+╭────────────────────⬣
+│ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐ | ✨ | ⭐
+│ ★ ✨ | ⭐ | ✨
+│ ★ ✨ | ⭐
+│ ★ ✨
+│
+│ ⭐◇FUN◇⭐
+│──────────────
+│ .truth
+│ .dare
+│ .riddle
+│ .rate
+│ .ship
+│ .fact
+│ .quote
+╰────────────────────⬣
+`
 
-▛▀ FUN GAME ZONE ▀▜
-▌ .truth
-▌ .dare
-▌ .riddle
-▌ .rate
-▌ .ship
-▌ .fact
-▌ .quote
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+// ================= MENU CARDS =================
+const sections = [
+{title:"⭐ GENERAL",text:GENERAL},
+{title:"⭐ ADMIN",text:ADMIN},
+{title:"⭐ OWNER",text:OWNER},
+{title:"⭐ BUGFIXED",text:BUG},
+{title:"⭐ IMAGE LAB",text:IMAGE},
+{title:"⭐ DOWNLOAD",text:DOWNLOAD},
+{title:"⭐ FUN",text:FUN}
+]
 
-▛▀ PREMIUM / SECRET ▀▜
-▌ BUG MENU
-▌ Flood Protection
-▌ Hidden BUG Engine
-▙▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+const cards = sections.map(sec => ({
+header:{
+title:sec.title,
+hasMediaAttachment:true,
+imageMessage:media.imageMessage
+},
+body:{text:sec.text},
+footer:{text:settings.botName || "BUGBOT"},
+buttons:[
+{
+name:"quick_reply",
+buttonParamsJson:JSON.stringify({
+display_text:"📜 MENU",
+id:".menu"
+})
+},
+{
+name:"cta_url",
+buttonParamsJson:JSON.stringify({
+display_text:"👑 OWNER",
+url:"https://wa.me/254768161116"
+})
+},
+{
+name:"cta_url",
+buttonParamsJson:JSON.stringify({
+display_text:"🌐 JOIN GROUP",
+url:"https://chat.whatsapp.com/GyZBMUtrw9LIlV6htLvkCK"
+})
+}
+]
+}))
 
-╔════════════════════════════════════╗
-👑 BUGFIXED SULEXH TECH
-⚡ BUGBOT V10 WHATSAPP CRASHER☠️☠️
-🚀 Future Bot Engineering
-╚════════════════════════════════════╝
-`;
+await sock.sendMessage(chatId,{
+viewOnceMessage:{
+message:{
+interactiveMessage:{
+body:{
+text:`
+╭───〔 🤖 ${settings.botName || "BUGBOT"} 〕───⬣
+│ 👤 User : ${message.pushName || "User"}
+│ ⚡ Mode : ${settings.mode || "Public"}
+│ ⏱ Uptime : ${process.uptime().toFixed(0)}s
+╰────────────────────⬣
+Swipe cards to explore commands →
+`
+},
+carouselMessage:{cards}
+}
+}
+}
+},{quoted:message})
 
-    // ===== SEND IMAGE MENU =====
-    await sock.sendMessage(chatId, {
-      image: { url: imageURL },
-      caption: helpMessage,
-      footer: "👑 BUGFIXED SULEXH BOT",
-      buttons: [
-        {
-          buttonId: "https://chat.whatsapp.com/GyZBMUtrw9LIlV6htLvkCK",
-          buttonText: { displayText: "🔔 JOIN GROUP" },
-          type: 1
-        },
-        {
-          buttonId: "https://wa.me/254768161116",
-          buttonText: { displayText: "👑 CONTACT OWNER" },
-          type: 1
-        }
-      ],
-      headerType: 4,
-      contextInfo: { mentionedJid: [] }
-    }, { quoted: message });
+}catch(err){
 
-  } catch (error) {
-    console.error("GOD MENU ERROR:", error);
+console.error("MENU ERROR:",err)
 
-    await sock.sendMessage(chatId, {
-      text: "🐉 GOD MENU SYSTEM ERROR\nTry again later."
-    }, { quoted: message });
-  }
+await sock.sendMessage(chatId,{
+text:"Menu failed to load."
+},{quoted:message})
+
 }
 
-module.exports = helpCommand;
+}
+
+module.exports = helpCommand
