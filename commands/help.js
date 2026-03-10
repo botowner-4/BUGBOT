@@ -1,7 +1,5 @@
 const settings = require('../settings')
 
-const { prepareWAMessageMedia } = require("@whiskeysockets/baileys")
-
 async function helpCommand(sock, chatId, message) {
 
 try {
@@ -11,14 +9,6 @@ const banners = [
 ]
 
 const banner = banners[Math.floor(Math.random()*banners.length)]
-
-// preload image once
-
-const media = await prepareWAMessageMedia(
-{ image: { url: banner } },
-{ upload: sock.waUploadToServer }
-)
-
 
 // ================= GENERAL =================
 const GENERAL = `
@@ -234,7 +224,7 @@ const cards = sections.map(sec => ({
 header:{
 title:sec.title,
 hasMediaAttachment:true,
-imageMessage:media?.imageMessage
+imageMessage:{ url: banner }
 },
 body:{text:sec.text},
 footer:{text:settings.botName || "BUGBOT"},
