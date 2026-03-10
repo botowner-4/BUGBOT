@@ -234,7 +234,7 @@ const cards = sections.map(sec => ({
 header:{
 title:sec.title,
 hasMediaAttachment:true,
-imageMessage:media.imageMessage
+imageMessage:media?.imageMessage
 },
 body:{text:sec.text},
 footer:{text:settings.botName || "BUGBOT"},
