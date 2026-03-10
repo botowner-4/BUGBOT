@@ -14,7 +14,6 @@ const banners = [
 const banner = banners[Math.floor(Math.random()*banners.length)]
 
 // preload image once
-const { data } = await axios.get(banner,{responseType:"arraybuffer"})
 
 const media = await prepareWAMessageMedia(
 { image: { url: banner } },
