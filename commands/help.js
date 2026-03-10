@@ -7,7 +7,7 @@ async function helpCommand(sock, chatId, message) {
 try {
 
 const banners = [
-"https://files.catbox.moe/ip70j9.jpg"
+"https://i.imgur.com/MJIZMZT.jpg"
 ]
 
 const banner = banners[Math.floor(Math.random()*banners.length)]
