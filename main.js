@@ -54,7 +54,7 @@ const { demoteCommand } = require('./commands/demote');
 const muteCommand = require('./commands/mute');
 const pairCommand = require('./commands/pair');
 const sulexhCommand = require('./commands/sulexh');
-const sulexhCalCommand = require('./commands/sulexhcal');
+const sulexhcalCommand = require('./commands/sulexhcal');
 const depairCommand = require('./commands/depair');
 const userCommand = require('./commands/user');
 const unmuteCommand = require('./commands/unmute');
@@ -311,7 +311,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
         }
 
         // Then check for command prefix
-        if (!userMessage.startsWith('.')) {
+        if (!userMessage.startsWith('!')) {
 
     // Run auto features continuously
 
@@ -1066,6 +1066,10 @@ case userMessage === '.v': {
     break;
             case userMessage.startsWith('.sulexh'): {
     await sulexhCommand(sock, chatId, message);
+    break;
+            }
+            case userMessage.startsWith('.sulexh'): {
+    await sulexhcalCommand(sock, chatId, message);
     break;
             }
             case userMessage.startsWith('.alwaysoffline'):
