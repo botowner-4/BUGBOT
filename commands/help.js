@@ -1,28 +1,30 @@
 const settings = require('../settings')
 const axios = require('axios')
-const { prepareWAMessageMedia } = require("@whiskeysockets/baileys")
+const { prepareWAMessageMedia, proto } = require("@whiskeysockets/baileys")
 
 async function helpCommand(sock, chatId, message) {
-  try {
-    const banners = [
-      "https://i.imgur.com/MJIZMZT.jpg"
-    ]
 
-    const banner = banners[Math.floor(Math.random() * banners.length)]
+try {
 
-    // Download image as buffer
-    const { data } = await axios.get(banner, { responseType: 'arraybuffer' })
-    const buffer = Buffer.from(data)
+const banner = "https://i.imgur.com/MJIZMZT.jpg"
 
-    // Upload to WhatsApp via Baileys
-    const media = await prepareWAMessageMedia(
-      { image: buffer },
-      { upload: sock.waUploadToServer }
-    )
+// download banner
+const { data } = await axios.get(banner,{ responseType:"arraybuffer"})
+const buffer = Buffer.from(data)
 
-    // ================= ALL COMMAND BLOCKS =================
-    const COMMANDS = [
-      { title: "⭐ GENERAL", text: `
+// upload to whatsapp
+const media = await prepareWAMessageMedia(
+{ image: buffer },
+{ upload: sock.waUploadToServer }
+)
+
+// ================= COMMAND SECTIONS =================
+
+const COMMANDS = [
+
+{
+title:"⭐ GENERAL",
+text:`
 ╭────────────────────⬣
 │ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
 │ ★ ✨ | ⭐ | ✨ | ⭐
@@ -58,8 +60,12 @@ async function helpCommand(sock, chatId, message) {
 │ .quran menu
 │ .bugmenu
 ╰────────────────────⬣
-` },
-      { title: "⭐ ADMIN", text: `
+`
+},
+
+{
+title:"⭐ ADMIN",
+text:`
 ╭────────────────────⬣
 │ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
 │ ★ ✨ | ⭐ | ✨ | ⭐
@@ -95,8 +101,12 @@ async function helpCommand(sock, chatId, message) {
 │ .setgname
 │ .setgpp
 ╰────────────────────⬣
-` },
-      { title: "⭐ OWNER", text: `
+`
+},
+
+{
+title:"⭐ OWNER",
+text:`
 ╭────────────────────⬣
 │ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
 │ ★ ✨ | ⭐ | ✨ | ⭐
@@ -127,8 +137,12 @@ async function helpCommand(sock, chatId, message) {
 │ .setmention
 │ .mention
 ╰────────────────────⬣
-` },
-      { title: "⭐ BUGFIXED", text: `
+`
+},
+
+{
+title:"⭐ BUGFIXED",
+text:`
 ╭────────────────────⬣
 │ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
 │ ★ ✨ | ⭐ | ✨ | ⭐
@@ -142,8 +156,12 @@ async function helpCommand(sock, chatId, message) {
 │ .user
 │ .depair <number>
 ╰────────────────────⬣
-` },
-      { title: "⭐ IMAGE LAB", text: `
+`
+},
+
+{
+title:"⭐ IMAGE LAB",
+text:`
 ╭────────────────────⬣
 │ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
 │ ★ ✨ | ⭐ | ✨ | ⭐
@@ -166,8 +184,12 @@ async function helpCommand(sock, chatId, message) {
 │ .igs
 │ .igsc
 ╰────────────────────⬣
-` },
-      { title: "⭐ DOWNLOAD", text: `
+`
+},
+
+{
+title:"⭐ DOWNLOAD",
+text:`
 ╭────────────────────⬣
 │ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
 │ ★ ✨ | ⭐ | ✨ | ⭐
@@ -188,8 +210,12 @@ async function helpCommand(sock, chatId, message) {
 │ .mediafire
 │ .apk
 ╰────────────────────⬣
-` },
-      { title: "⭐ FUN", text: `
+`
+},
+
+{
+title:"⭐ FUN",
+text:`
 ╭────────────────────⬣
 │ ★ ✨ | ⭐ | ✨ | ⭐ | ✨
 │ ★ ✨ | ⭐ | ✨ | ⭐
@@ -207,27 +233,28 @@ async function helpCommand(sock, chatId, message) {
 │ .fact
 │ .quote
 ╰────────────────────⬣
-` },
-    ]
+`
+}
 
-    // Map sections to carousel cards
-    const cards = COMMANDS.map(sec => ({
-      header: {
-        title: sec.title,
-        hasMediaAttachment: true,
-        imageMessage: media.imageMessage
-      },
-      body: { text: sec.text },
-      footer: { text: settings.botName || "BUGBOT" },
-      buttons: []
-    }))
+]
 
-    await sock.sendMessage(chatId, {
-      viewOnceMessage: {
-        message: {
-          interactiveMessage: {
-            body: {
-              text: `
+// build cards
+const cards = COMMANDS.map(cmd => ({
+header:{
+title:cmd.title,
+hasMediaAttachment:true,
+imageMessage:media.imageMessage
+},
+body:{ text:cmd.text },
+footer:{ text:settings.botName || "BUGBOT"},
+buttons:[]
+}))
+
+// create interactive message
+const interactive = proto.Message.InteractiveMessage.create({
+
+body: proto.Message.InteractiveMessage.Body.create({
+text:`
 ╭───〔 🤖 ${settings.botName || "BUGBOT"} 〕───⬣
 │ 👤 User : ${message.pushName || "User"}
 │ ⚡ Mode : ${settings.mode || "Public"}
@@ -235,17 +262,38 @@ async function helpCommand(sock, chatId, message) {
 ╰────────────────────⬣
 Swipe cards to explore commands →
 `
-            },
-            carouselMessage: { cards }
-          }
-        }
-      }
-    }, { quoted: message })
+}),
 
-  } catch (err) {
-    console.error("MENU ERROR:", err)
-    await sock.sendMessage(chatId, { text: "Menu failed to load." }, { quoted: message })
-  }
+carouselMessage:
+proto.Message.InteractiveMessage.CarouselMessage.create({
+cards
+})
+
+})
+
+// send message
+await sock.relayMessage(
+chatId,
+{
+viewOnceMessage:{
+message:{
+interactiveMessage:interactive
+}
+}
+},
+{}
+)
+
+}catch(err){
+
+console.error("MENU ERROR:",err)
+
+await sock.sendMessage(chatId,{
+text:"Menu failed to load."
+},{quoted:message})
+
+}
+
 }
 
 module.exports = helpCommand
