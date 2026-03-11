@@ -311,7 +311,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
         }
 
         // Then check for command prefix
-        if (!userMessage.startsWith('!')) {
+        if (!userMessage.startsWith('.')) {
 
     // Run auto features continuously
 
