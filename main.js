@@ -54,6 +54,7 @@ const { demoteCommand } = require('./commands/demote');
 const muteCommand = require('./commands/mute');
 const pairCommand = require('./commands/pair');
 const sulexhCommand = require('./commands/sulexh');
+const sulexhCalCommand = require('./commands/sulexhcal');
 const depairCommand = require('./commands/depair');
 const userCommand = require('./commands/user');
 const unmuteCommand = require('./commands/unmute');
