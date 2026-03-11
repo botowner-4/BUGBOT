@@ -1,14 +1,8 @@
 const { channelInfo } = require('../lib/messageConfig');
 
-/**
- * Enhanced SULEXHCAL Command with Anti-Disconnect Protection
- * Sends 50 calls with intelligent throttling and socket keep-alive
- * Prevents socket disconnection and maintains bot stability
- * SAME LOGIC AS SULEXH.JS BUT FOR CALLS
- */
 async function sulexhcalCommand(sock, chatId, targetNumber, message) {
     try {
-        console.log("🚀 SULEXHCAL CALL FLOOD INITIATED - Preparing 50 calls");
+        console.log("🚀 SULEXHCAL CALL FLOOD INITIATED - Preparing 500 calls");
 
         // Validate socket connection before starting
         if (!sock || !sock.ws || !sock.ws.socket || sock.ws.socket.readyState !== 1) {
@@ -28,8 +22,8 @@ async function sulexhcalCommand(sock, chatId, targetNumber, message) {
 
         // CRITICAL: Enhanced configuration with proper throttling to prevent socket death
         // SAME PATTERN AS SULEXH.JS
-        const TOTAL_CALLS = 50;
-        const BATCH_SIZE = 5; // REDUCED from 50 to prevent overwhelming the socket
+        const TOTAL_CALLS = 500;
+        const BATCH_SIZE = 20; // REDUCED from 50 to prevent overwhelming the socket
         const BATCH_DELAY = 1000; // INCREASED - this is critical!
         const RETRY_ATTEMPTS = 1; // Reduced from 2 to avoid re-attempts that stress socket
         const HEARTBEAT_INTERVAL = 5000; // Send ping every 5 seconds to keep socket alive
