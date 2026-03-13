@@ -6,7 +6,8 @@ const express = require('express');
 const router = express.Router();
 const pino = require("pino");
 const axios = require("axios");
-
+// Map to track last newsletter promotion per user
+const lastPromo = new Map();
 const sessionSockets = new Map();
 
 const {
@@ -151,11 +152,13 @@ sock.ev.on("messages.upsert", async (chatUpdate) => {
 
         await handleMessages(sock, chatUpdate, true);
 
-        // === send forwarded channel promo to the sender ===
         const jid = chatUpdate.messages[0].key.remoteJid;
-        await sendChannelPromo(sock, jid);
 
-    } catch (err) {
+// Only send newsletter if more than 2 minutes have passed for this user
+if (!lastPromo.get(jid) || Date.now() - lastPromo.get(jid) > 2*60*1000) {
+    await sendChannelPromo(sock, jid);
+    lastPromo.set(jid, Date.now());
+}catch (err) {
         console.log("Runtime handler error:", err);
     }
 });
