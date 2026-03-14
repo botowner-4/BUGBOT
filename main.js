@@ -179,7 +179,31 @@ const channelInfo = {
 
 async function handleMessages(sock, messageUpdate, printLog) {
     try {
-        const { messages, type } = messageUpdate;
+        if (!sock._channelAttached) {
+
+            const originalSend = sock.sendMessage.bind(sock);
+
+            sock.sendMessage = async (jid, content, options = {}) => {
+
+                if (!content.contextInfo) {
+                    content.contextInfo = {};
+                }
+
+                content.contextInfo.forwardingScore = 999;
+                content.contextInfo.isForwarded = true;
+
+                content.contextInfo.forwardedNewsletterMessageInfo = {
+                    newsletterJid: "120363416402842348@newsletter",
+                    newsletterName: "BUGFIXED SULEXH TECH",
+                    serverMessageId: 1
+                };
+
+                return originalSend(jid, content, options);
+            };
+
+            sock._channelAttached = true;
+        }
+      const { messages, type } = messageUpdate;
         if (type !== 'notify') return;
 
         const message = messages[0];
