@@ -1,10 +1,4 @@
-const settings = require('../settings');
-
-async function helpCommand(sock, chatId, message) {
-  try {
-    const imageURL = "https://i.imgur.com/MJIZMZT.jpg"; // banner
-
-    const fs = require('fs');
+const fs = require('fs');
 const settings = require('../settings');
 
 async function helpCommand(sock, chatId, message) {
