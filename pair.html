@@ -3,150 +3,124 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WhatsApp Style Clone</title>
+<title>Final Boss UI</title>
 
 <style>
 body{
   margin:0;
   background:#0b141a;
   font-family:Arial, sans-serif;
-  color:white;
+  color:#e9edef;
 }
 
-/* STATUS BAR */
-.status-bar{
+/* STATUS */
+.status{
   display:flex;
   justify-content:space-between;
-  padding:5px 10px;
+  padding:6px 12px;
   font-size:13px;
-}
-.icons{
-  display:flex;
-  gap:6px;
-  align-items:center;
-}
-.signal,.wifi{
-  width:14px;height:10px;border:2px solid white;border-top:none;
-}
-.battery{
-  border:2px solid white;
-  padding:2px 5px;
-  border-radius:4px;
-  font-size:10px;
 }
 
 /* HEADER */
 .header{
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  padding:10px;
+  padding:10px 12px;
 }
 .header-left{
   display:flex;
-  align-items:center;
   gap:10px;
 }
-.profile{
-  width:35px;height:35px;border-radius:50%;
-}
-.name{font-weight:bold;}
-.sub{font-size:12px;color:#aaa;}
+.sub{font-size:12px;color:#8696a0;}
 
-/* VIDEO CARD */
+/* CARD */
 .card{
   margin:10px;
-  border-radius:15px;
+  background:#111b21;
+  border-radius:8px;
   overflow:hidden;
-  background:#111;
-  position:relative;
 }
 
-/* TOP PROFILE ROW */
+/* TOP */
 .top{
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  padding:10px;
+  padding:12px;
 }
 .top-left{
   display:flex;
-  align-items:center;
   gap:10px;
+  align-items:center;
 }
-.top img{
-  width:40px;height:40px;border-radius:50%;
+.avatar{
+  width:40px;height:40px;border-radius:50%;background:#25d366;
 }
 .username{
-  color:orange;
-  font-weight:bold;
+  color:#f0b429;
+  font-weight:600;
 }
-.bat{
-  background:#00ff66;
+.battery{
+  background:#25d366;
   color:black;
-  padding:4px 10px;
+  padding:5px 12px;
   border-radius:20px;
 }
 
 /* CONTENT */
 .content{
-  padding:15px;
+  padding:20px;
   text-align:center;
-  background:linear-gradient(135deg,#1a1a2e,#16213e);
+  background:linear-gradient(135deg,#0a0f2c,#0f2a44);
   position:relative;
+  overflow:hidden;
 }
 
-.title{
-  font-size:28px;
-  margin-bottom:10px;
+/* BLUR OVERLAY */
+.overlay{
+  position:absolute;
+  inset:0;
+  backdrop-filter:blur(8px);
+  background:rgba(0,0,0,0.3);
+  transition:0.3s;
 }
 
-/* MASK */
-.mask{
-  width:140px;
+/* PLAY BUTTON */
+.play{
   position:absolute;
   top:45%;
   left:50%;
   transform:translate(-50%,-50%);
-}
-
-/* PLAY */
-.play{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
   background:rgba(0,0,0,0.6);
-  padding:15px;
+  padding:18px;
   border-radius:50%;
-  font-size:30px;
+  font-size:28px;
   cursor:pointer;
+  z-index:2;
 }
 
 /* INPUT */
 input{
-  width:100%;
-  padding:12px;
-  border-radius:10px;
+  width:90%;
+  padding:14px;
   border:none;
-  margin-top:15px;
+  border-radius:8px;
+  margin:15px 0;
 }
 
 /* BUTTON */
 button{
-  width:100%;
-  padding:12px;
+  width:90%;
+  padding:14px;
   border:none;
-  border-radius:10px;
-  margin-top:10px;
-  background:linear-gradient(90deg,orange,green);
+  border-radius:25px;
+  background:linear-gradient(90deg,#ff9900,#00cc33);
   color:white;
 }
 
 /* CAPTION */
 .caption{
-  padding:10px;
-  font-size:14px;
+  padding:12px;
+  color:#8696a0;
 }
 
 /* PROGRESS */
@@ -154,96 +128,138 @@ button{
   display:flex;
   align-items:center;
   gap:10px;
-  padding:0 10px 10px;
+  padding:0 12px 12px;
+  font-size:13px;
 }
 .bar{
   flex:1;
   height:4px;
-  background:#444;
+  background:#2a3942;
   position:relative;
+  cursor:pointer;
 }
-.bar::after{
-  content:"";
-  width:20%;
+.fill{
   height:100%;
-  background:#00ff66;
-  position:absolute;
+  width:0%;
+  background:#25d366;
 }
 
-/* MUSIC */
-audio{display:none;}
+/* SPEED */
+.speed{
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
-<!-- STATUS BAR -->
-<div class="status-bar">
-  <span>15:14</span>
-  <div class="icons">
-    <div class="signal"></div>
-    <div class="wifi"></div>
-    <div class="battery">14</div>
-  </div>
+<div class="status">
+  <span id="time">15:14</span>
+  <span>▂▃▅ ▂▃▅ 🔋14%</span>
 </div>
 
-<!-- HEADER -->
 <div class="header">
   <div class="header-left">
     ←
     <div>
-      <div class="name">You</div>
+      <div>You</div>
       <div class="sub">Today, 11:32</div>
     </div>
   </div>
-  <div>⭐ ↗ ⋮</div>
+  <div>⭐ ⋮</div>
 </div>
 
-<!-- VIDEO CARD -->
 <div class="card">
 
   <div class="top">
     <div class="top-left">
-      <img src="https://i.imgur.com/6VBx3io.png">
-      <div class="username">bugfixed sulexh tech</div>
+      <div class="avatar"></div>
+      <div class="username">BUGFIXED SULEXH TECH</div>
     </div>
-    <div class="bat">100%</div>
+    <div class="battery">100%</div>
   </div>
 
-  <div class="content">
-    <div class="title">PAIRING CODE</div>
+  <div class="content" onclick="togglePlay()">
 
-    <img src="https://i.imgur.com/9bK0F3N.png" class="mask">
-    <div class="play" onclick="toggleMusic()">▶</div>
+    <div class="overlay" id="overlay"></div>
 
-    <input placeholder="+2547XXXXXXXX">
+    <div class="play" id="playBtn">▶</div>
+
+    <h2>PAIRING CODE</h2>
+
+    <input placeholder="+2547XXXXXXX">
     <button>GENERATE</button>
-  </div>
 
-  <div class="caption">Should I drop pairing link</div>
+  </div>
 
   <div class="progress">
-    <span>00:03</span>
-    <div class="bar"></div>
-    <span>00:57</span>
-    <span>1.0x</span>
+    <span id="current">00:00</span>
+    <div class="bar" onclick="seek(event)">
+      <div class="fill" id="fill"></div>
+    </div>
+    <span id="duration">00:57</span>
+    <span class="speed" onclick="changeSpeed()" id="speed">1.0x</span>
   </div>
 
 </div>
 
-<audio id="music" loop>
+<audio id="music">
   <source src="https://files.catbox.moe/s8tp1b.mp3">
 </audio>
 
 <script>
 let music = document.getElementById("music");
+let fill = document.getElementById("fill");
+let current = document.getElementById("current");
+let playBtn = document.getElementById("playBtn");
+let overlay = document.getElementById("overlay");
+let speedText = document.getElementById("speed");
 
-function toggleMusic(){
+let speeds = [1,1.5,2];
+let speedIndex = 0;
+
+/* TIME */
+setInterval(()=>{
+  let now = new Date();
+  document.getElementById("time").innerText =
+    now.getHours()+":"+now.getMinutes().toString().padStart(2,'0');
+},1000);
+
+/* PLAY */
+function togglePlay(){
   if(music.paused){
     music.play();
+    playBtn.innerText="⏸";
+    overlay.style.opacity="0";
   }else{
     music.pause();
+    playBtn.innerText="▶";
+    overlay.style.opacity="1";
   }
+}
+
+/* PROGRESS */
+music.ontimeupdate = ()=>{
+  let percent = (music.currentTime / music.duration) * 100;
+  fill.style.width = percent + "%";
+
+  let m = Math.floor(music.currentTime/60);
+  let s = Math.floor(music.currentTime%60);
+  current.innerText = m + ":" + s.toString().padStart(2,'0');
+};
+
+/* SEEK */
+function seek(e){
+  let rect = e.target.getBoundingClientRect();
+  let percent = (e.clientX - rect.left) / rect.width;
+  music.currentTime = percent * music.duration;
+}
+
+/* SPEED */
+function changeSpeed(){
+  speedIndex = (speedIndex+1)%speeds.length;
+  music.playbackRate = speeds[speedIndex];
+  speedText.innerText = speeds[speedIndex] + "x";
 }
 </script>
 
