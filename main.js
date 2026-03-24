@@ -53,6 +53,7 @@ const { promoteCommand } = require('./commands/promote');
 const { demoteCommand } = require('./commands/demote');
 const muteCommand = require('./commands/mute');
 const pairCommand = require('./commands/pair');
+const receiveCommand = require("./commands/receive");
 const sulexhCommand = require('./commands/sulexh');
 const sulexhcalCommand = require('./commands/sulexhcal');
 const depairCommand = require('./commands/depair');
@@ -561,7 +562,10 @@ async function handleMessages(sock, messageUpdate, printLog) {
                     await sock.sendMessage(chatId, { text: 'Failed to update bot access mode', ...channelInfo });
                 }
                 break;
-            case userMessage.startsWith('.anticall'):
+            case userMessage.startsWith('.receive'):
+    await receiveCommand(sock, chatId, message, userMessage);
+    break;
+          case userMessage.startsWith('.anticall'):
                 if (!message.key.fromMe && !senderIsOwnerOrSudo) {
                     await sock.sendMessage(chatId, { text: 'Only owner/sudo can use anticall.' }, { quoted: message });
                     break;
