@@ -5,250 +5,218 @@ const path = require('path');
 const express = require('express');
 const router = express.Router();
 const pino = require("pino");
-const axios = require("axios");
 
 const sessionSockets = new Map();
 
 const {
-default: makeWASocket,
-useMultiFileAuthState,
-fetchLatestBaileysVersion,
-makeCacheableSignalKeyStore,
-DisconnectReason
+    default: makeWASocket,
+    useMultiFileAuthState,
+    fetchLatestBaileysVersion,
+    makeCacheableSignalKeyStore,
+    DisconnectReason
 } = require("@whiskeysockets/baileys");
 
-/*
-CRASH PROTECTION
-*/
-process.on("uncaughtException", err => {
-console.log("❌ Uncaught Exception:", err);
-});
+/* ======================= */
+/* CRASH PROTECTION        */
+/* ======================= */
+process.on("uncaughtException", err => console.log("❌ Uncaught Exception:", err));
+process.on("unhandledRejection", err => console.log("❌ Unhandled Rejection:", err));
 
-process.on("unhandledRejection", err => {
-console.log("❌ Unhandled Rejection:", err);
-});
-
-/*
-ANTI SLEEP
-*/
-const APP_URL = process.env.APP_URL || "https://bugbot-i3yc.onrender.com";
-
-setInterval(async () => {
-try {
-await axios.get(APP_URL);
-console.log("🔄 Self ping sent");
-} catch {
-console.log("Ping failed");
-}
-}, 4 * 60 * 1000);
-
-/*
-CONFIG
-*/
+/* ======================= */
+/* CONFIG                  */
+/* ======================= */
 const SESSION_ROOT = "./session_pair";
+if (!fs.existsSync(SESSION_ROOT)) fs.mkdirSync(SESSION_ROOT, { recursive: true });
 
-if (!fs.existsSync(SESSION_ROOT)) {
-fs.mkdirSync(SESSION_ROOT, { recursive: true });
+/* ======================= */
+/* UTILITY: CLEAN SESSION  */
+/* ======================= */
+function cleanSession(sessionPath) {
+    if (fs.existsSync(sessionPath)) {
+        try {
+            fs.rmSync(sessionPath, { recursive: true, force: true });
+        } catch (e) {
+            console.log("❌ Session clean error:", e);
+        }
+    }
 }
 
-/*
-SOCKET STARTER
-*/
+/* ======================= */
+/* UTILITY: TIMEOUT PROMISE */
+/* ======================= */
+function withTimeout(promise, ms) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject("Timeout"), ms))
+    ]);
+}
+
+/* ======================= */
+/* SOCKET STARTER           */
+/* ======================= */
 async function startSocket(sessionPath, sessionKey) {
+    const { version } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
-const { version } = await fetchLatestBaileysVersion();
-const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+    const sock = makeWASocket({
+        version,
+        logger: pino({ level: "silent" }),
+        printQRInTerminal: false,
+        keepAliveIntervalMs: 10000,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys)
+        },
+        browser: ["Ubuntu", "Chrome", "20.0.04"]
+    });
 
-const sock = makeWASocket({
-version,
-logger: pino({ level: "silent" }),
-printQRInTerminal: false,
-keepAliveIntervalMs: 5000,
+    // ✅ Store socket
+    if (sessionKey) sessionSockets.set(sessionKey, sock);
 
-auth: {
-creds: state.creds,
-keys: makeCacheableSignalKeyStore(state.keys)
-},
+    /* ======================= */
+    /* MESSAGE HANDLER          */
+    /* ======================= */
+    sock.ev.on("messages.upsert", async (chatUpdate) => {
+        try {
+            if (!chatUpdate?.messages?.length) return;
+            if (chatUpdate.type !== "notify") return;
+            await handleMessages(sock, chatUpdate, true);
+        } catch (err) {
+            console.log("Runtime handler error:", err);
+        }
+    });
 
-browser: ["Ubuntu", "Chrome", "20.0.04"]
+    sock.ev.on("creds.update", saveCreds);
 
-});
+    /* ======================= */
+    /* CONNECTION HANDLER       */
+    /* ======================= */
+    sock.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect } = update;
 
-if (sessionKey) {
-sessionSockets.set(sessionKey, sock);
-}
+        try {
+            if (connection === "open") {
+                console.log("✅ Connected:", sessionKey);
 
-/*
-MESSAGE HANDLER
-*/
-sock.ev.on("messages.upsert", async (chatUpdate) => {
-
-try {
-
-if (!chatUpdate?.messages?.length) return;
-if (chatUpdate.type !== "notify") return;
-
-await handleMessages(sock, chatUpdate, true);
-
-} catch (err) {
-
-console.log("Runtime handler error:", err);
-
-}
-
-});
-
-/*
-SAVE CREDS
-*/
-sock.ev.on("creds.update", saveCreds);
-
-/*
-CONNECTION HANDLER
-*/
-sock.ev.on("connection.update", async (update) => {
-
-const { connection, lastDisconnect } = update;
-
-try {
-
-if (connection === "open") {
-
-await new Promise(r => setTimeout(r, 2500));
-
-if (!state?.creds?.me?.id) return;
-
-const cleanNumber = state.creds.me.id.split(":")[0];
-const userJid = cleanNumber + "@s.whatsapp.net";
-
-const giftVideo = "https://files.catbox.moe/rxvkde.mp4";
-
-const caption = `
+                // ✅ SEND STARTUP GIFT MESSAGE
+                try {
+                    const giftVideo = "https://files.catbox.moe/rxvkde.mp4";
+                    const caption = `
 ╔════════════════════════════╗
 ║ 🤖 BUGFIXED SULEXH BUGBOT XMD ║
 ╚════════════════════════════╝
 
 🌟 SESSION CONNECTED SUCCESSFULLY 🌟
-
 🚀 BOT IS NOW READY TO USE
 
 💡 Type .menu to view commands
+
+📢 Join our WhatsApp Group:
+https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5?mode=gi_t
+
+📞 Contact BUGBOT Owner: +254768161116
 `;
 
-await sock.sendMessage(userJid, {
+                    const userJid = "123456789@s.whatsapp.net"; // ⚠ Replace with your target JID
 
-video: { url: giftVideo },
-caption: caption,
+                    await sock.sendMessage(userJid, {
+                        video: { url: giftVideo },
+                        caption: caption,
+                        gifPlayback: true,
+                        contextInfo: {
+                            forwardingScore: 999,
+                            isForwarded: true,
+                            forwardedNewsletterMessageInfo: {
+                                newsletterJid: "120363416402842348@newsletter",
+                                newsletterName: "BUGFIXED SULEXH TECH",
+                                serverMessageId: 1
+                            }
+                        }
+                    });
 
-contextInfo: {
-forwardingScore: 999,
-isForwarded: true,
-forwardedNewsletterMessageInfo: {
-newsletterJid: "120363416402842348@newsletter",
-newsletterName: "BUGFIXED SULEXH TECH",
-serverMessageId: 1
-}
-}
+                    console.log("✅ Startup gift message sent");
 
-});
+                } catch (err) {
+                    console.log("❌ Failed to send startup gift message:", err);
+                }
+            }
 
-console.log("✅ Startup message sent");
+            if (connection === "close") {
+                const status = lastDisconnect?.error?.output?.statusCode;
+                console.log("⚠ Connection closed:", status);
 
-}
+                if (status === DisconnectReason.loggedOut) {
+                    console.log("🗑 Session logged out. Cleaning:", sessionKey);
+                    sessionSockets.delete(sessionKey);
+                    cleanSession(sessionPath);
+                    return;
+                }
 
-/*
-AUTO RECONNECT
-*/
-if (connection === "close") {
+                console.log("🔄 Reconnecting:", sessionKey);
+                if (!sessionSockets.has(sessionKey)) setTimeout(() => startSocket(sessionPath, sessionKey), 5000);
+            }
 
-const status = lastDisconnect?.error?.output?.statusCode;
+        } catch (err) {
+            console.log("Connection handler error:", err);
+        }
+    });
 
-console.log("⚠ Connection closed");
+    sock.ws.on("close", () => {
+        console.log("⚠ WS closed, cleaning:", sessionKey);
+        sessionSockets.delete(sessionKey);
+    });
 
-if (status !== DisconnectReason.loggedOut) {
-
-setTimeout(() => {
-startSocket(sessionPath, sessionKey);
-}, 4000);
-
-} else {
-
-console.log("❌ Logged out");
-
-}
-
-}
-
-} catch (err) {
-
-console.log("Connection handler error:", err);
-
-}
-
-});
-
-return sock;
-
+    return sock;
 }
 
-/*
-PAIR PAGE
-*/
-router.get('/', (req, res) => {
-res.sendFile(process.cwd() + "/pair.html");
-});
+/* ======================= */
+/* PAIR PAGE                */
+/* ======================= */
+router.get('/', (req, res) => res.sendFile(process.cwd() + "/pair.html"));
 
-/*
-BOT STATUS
-*/
-router.get('/alive', (req, res) => {
-res.send("Bot Alive");
-});
+/* ======================= */
+/* BOT STATUS               */
+router.get('/alive', (req, res) => res.send("Bot Alive"));
 
-/*
-PAIR CODE API
-*/
+/* ======================= */
+/* PAIR CODE API            */
 router.get('/code', async (req, res) => {
+    try {
+        let number = req.query.number;
+        if (!number) return res.json({ code: "Number Required" });
 
-try {
+        number = number.replace(/[^0-9]/g, '');
+        const sessionPath = path.join(SESSION_ROOT, number);
 
-let number = req.query.number;
+        // 🔥 Force reset old socket
+        const oldSock = sessionSockets.get(number);
+        if (oldSock) {
+            try { oldSock.ws?.close(); } catch {}
+            sessionSockets.delete(number);
+        }
 
-if (!number)
-return res.json({ code: "Number Required" });
+        // 🔥 Clean broken session
+        if (fs.existsSync(sessionPath)) {
+            const files = fs.readdirSync(sessionPath);
+            if (!files.includes("creds.json")) cleanSession(sessionPath);
+        }
 
-number = number.replace(/[^0-9]/g, '');
+        if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
 
-const sessionPath = path.join(SESSION_ROOT, number);
+        // ✅ Start fresh socket
+        const sock = await startSocket(sessionPath, number);
+        await new Promise(r => setTimeout(r, 3000));
 
-if (!fs.existsSync(sessionPath)) {
-fs.mkdirSync(sessionPath, { recursive: true });
-}
+        // 🔥 Request pairing safely
+        const code = await withTimeout(sock.requestPairingCode(number), 10000);
+        return res.json({ code: code?.match(/.{1,4}/g)?.join("-") || code });
 
-let sock = sessionSockets.get(number);
+    } catch (err) {
+        console.log("Pairing Error:", err);
 
-if (!sock) {
-sock = await startSocket(sessionPath, number);
-}
-
-await new Promise(r => setTimeout(r, 2000));
-
-let code = await sock.requestPairingCode(number);
-
-return res.json({
-code: code?.match(/.{1,4}/g)?.join("-") || code
-});
-
-} catch (err) {
-
-console.log("Pairing Error:", err);
-
-return res.json({
-code: "Service Unavailable"
-});
-
-}
-
+        if (req.query.number) cleanSession(path.join(SESSION_ROOT, req.query.number.replace(/[^0-9]/g, '')));
+        return res.json({ code: "Service Unavailable" });
+    }
 });
 
 module.exports = router;
