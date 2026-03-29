@@ -201,67 +201,135 @@ h3{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
 
 <script>
-let a=document.getElementById("pair");
-let b=document.getElementById("submit");
-let c=document.getElementById("number");
+let output = document.getElementById("pair");
+let btn = document.getElementById("submit");
+let input = document.getElementById("number");
 
-/* TIME */
+let loadingInterval;
+
+/* ⏰ TIME */
 setInterval(()=>{
-let d=new Date();
-document.getElementById("time").innerText=
-d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");
+  let d=new Date();
+  document.getElementById("time").innerText =
+  d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");
 },1000);
 
-/* COPY */
-async function Copy(){
-let obj=document.getElementById("copy");
-let text=obj.innerText;
-await navigator.clipboard.writeText(text.replace('CODE: ',''));
-obj.innerText="COPIED!";
-obj.style.color="lime";
-setTimeout(()=>obj.innerText=text,1000);
+/* 🔄 LOADING ANIMATION */
+function startLoading(){
+  let dots = 0;
+  loadingInterval = setInterval(()=>{
+    dots = (dots + 1) % 4;
+    output.innerHTML = "Generating code" + ".".repeat(dots);
+  }, 500);
 }
 
-/* SUBMIT */
-b.onclick=async()=>{
-if(!c.value){
-a.innerHTML="Enter number";
-return;
+function stopLoading(){
+  clearInterval(loadingInterval);
 }
-let num=c.value.replace(/\D/g,"");
-a.innerHTML="Please wait...";
 
-try{
-let res=await axios(`/pair/code?number=${num}`);
-let code=res.data.code||"Error";
+/* 📋 COPY */
+async function copyCode(){
+  let el = document.getElementById("copy");
+  let text = el.innerText.replace("CODE: ","");
 
-a.innerHTML=`<div id="copy" onclick="Copy()">CODE: ${code}</div>`;
-}catch{
-a.innerHTML="Server error";
+  await navigator.clipboard.writeText(text);
+
+  el.innerText = "COPIED!";
+  el.style.color = "lime";
+
+  setTimeout(()=>{
+    el.innerText = "CODE: " + text;
+    el.style.color = "white";
+  },1000);
 }
+
+/* 🔥 TYPE ANIMATION */
+function typeCode(code){
+  let i = 0;
+  output.innerHTML = `<div id="copy" onclick="copyCode()">CODE: </div>`;
+  let el = document.getElementById("copy");
+
+  let typer = setInterval(()=>{
+    el.innerText = "CODE: " + code.slice(0, i++);
+    if(i > code.length) clearInterval(typer);
+  },50);
+}
+
+/* 🚀 SUBMIT */
+btn.onclick = async () => {
+
+  let num = input.value.trim();
+
+  if(!num){
+    output.innerHTML = "⚠ Enter number";
+    return;
+  }
+
+  num = num.replace(/\D/g,"");
+
+  if(!num.startsWith("254")){
+    output.innerHTML = "❌ Use 254XXXXXXXXX";
+    return;
+  }
+
+  btn.disabled = true;
+  startLoading();
+
+  try{
+    let res = await axios(`/pair/code?number=${num}`);
+
+    stopLoading();
+    btn.disabled = false;
+
+    let code = res.data.code;
+
+    if(!code || code.includes("Try") || code.includes("Error")){
+      output.innerHTML = `
+        ❌ Failed<br><br>
+        <button onclick="retry()">🔄 Retry</button>
+      `;
+      return;
+    }
+
+    typeCode(code);
+
+  }catch(err){
+    stopLoading();
+    btn.disabled = false;
+
+    output.innerHTML = `
+      ❌ Server Error<br><br>
+      <button onclick="retry()">🔄 Retry</button>
+    `;
+  }
 };
+
+/* 🔁 RETRY */
+function retry(){
+  btn.click();
+}
 
 /* 🎵 MUSIC */
 let music=document.getElementById("bgMusic");
-let btn=document.getElementById("musicBtn");
+let musicBtn=document.getElementById("musicBtn");
 
 window.onload=()=>{
-music.volume=0.4;
-music.play().catch(()=>{
-document.body.onclick=()=>music.play();
-});
+  music.volume=0.4;
+  music.play().catch(()=>{
+    document.body.onclick=()=>music.play();
+  });
 };
 
-btn.onclick=()=>{
-if(music.paused){
-music.play();
-btn.innerText="⏸ Music";
-}else{
-music.pause();
-btn.innerText="▶ Music";
-}
+musicBtn.onclick=()=>{
+  if(music.paused){
+    music.play();
+    musicBtn.innerText="⏸ Music";
+  }else{
+    music.pause();
+    musicBtn.innerText="▶ Music";
+  }
 };
 </script>
 
 </body>
-  </html>
+</html>
