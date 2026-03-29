@@ -89,6 +89,8 @@ https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5?mode=gi_t
 }
 
 // ==============================
+router.get('/', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'pair.html'));
 // Pair route
 router.get('/', async (req, res) => {
 
