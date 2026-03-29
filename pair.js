@@ -2,35 +2,43 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const pino = require("pino");
-
+const pino = require('pino');
+const axios = require('axios');
 const {
     default: makeWASocket,
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     DisconnectReason
-} = require("@whiskeysockets/baileys");
+} = require('@whiskeysockets/baileys');
 
 const SESSION_ROOT = path.join(process.cwd(), 'session_pair');
 if (!fs.existsSync(SESSION_ROOT)) fs.mkdirSync(SESSION_ROOT, { recursive: true });
 
 const sessionSockets = new Map();
+const qrCodes = new Map(); // store QR codes temporarily
+
+// Self-ping to prevent sleeping
+const APP_URL = process.env.APP_URL || "https://bugbot-i3yc.onrender.com";
+setInterval(async () => {
+    try {
+        await axios.get(APP_URL);
+        console.log("🔄 Self-ping sent");
+    } catch {
+        console.log("❌ Self-ping failed");
+    }
+}, 4 * 60 * 1000);
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-function cleanSession(p) { if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true }); }
+function cleanSession(sessionPath) { if (fs.existsSync(sessionPath)) fs.rmSync(sessionPath, { recursive: true, force: true }); }
 
 // ==============================
-// Start socket
-    async function startSocket(sessionKey, userNumber) {
+// Start WhatsApp socket per number
+async function startSocket(sessionKey, userNumber) {
     const sessionPath = path.join(SESSION_ROOT, sessionKey);
     const tempStatePath = path.join(sessionPath, "_temp");
-
-    // Make sure directories exist
-    if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
     if (!fs.existsSync(tempStatePath)) fs.mkdirSync(tempStatePath, { recursive: true });
 
-    // Now safely call Baileys auth
     const { state, saveCreds } = await useMultiFileAuthState(tempStatePath);
     const { version } = await fetchLatestBaileysVersion();
 
@@ -45,23 +53,23 @@ function cleanSession(p) { if (fs.existsSync(p)) fs.rmSync(p, { recursive: true,
 
     sessionSockets.set(sessionKey, sock);
     let giftSent = false;
-    let readyForPairing = false;
 
-    sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
-        if (connection === "connecting") readyForPairing = true;
+    sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
+        // 🔹 Store QR for frontend
+        if (qr) {
+            qrCodes.set(sessionKey, qr);
+            console.log(`📌 QR generated for ${userNumber}`);
+        }
 
+        // 🔹 Successful login → save session permanently & send gift
         if (connection === "open" && state.creds.me && !giftSent) {
             giftSent = true;
-            readyForPairing = false;
+            qrCodes.delete(sessionKey);
 
-            try {
-                // Copy temp session to permanent folder
-                fs.readdirSync(tempStatePath).forEach(file => {
-                    fs.copyFileSync(path.join(tempStatePath, file), path.join(sessionPath, file));
-                });
-            } catch (err) {
-                console.log("⚠ Failed to save session:", err.message);
-            }
+            if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
+            fs.readdirSync(tempStatePath).forEach(file => {
+                fs.copyFileSync(path.join(tempStatePath, file), path.join(sessionPath, file));
+            });
 
             const cleanNumber = state.creds.me.id.split(":")[0];
             const userJid = `${cleanNumber}@s.whatsapp.net`;
@@ -81,17 +89,19 @@ https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5?mode=gi_t
 
 📞 Contact BUGBOT Owner: +254768161116
 `;
+
             await sock.sendMessage(userJid, { video: { url: giftVideo }, caption, gifPlayback: true });
             console.log(`✅ Startup gift sent to ${userNumber}`);
         }
 
+        // 🔹 Handle disconnects
         if (connection === "close") {
             const status = lastDisconnect?.error?.output?.statusCode;
             if (status === DisconnectReason.loggedOut) {
-                console.log(`❌ Logged out → cleaning session for ${sessionKey}`);
+                console.log(`❌ Logged out: Cleaning session for ${sessionKey}`);
                 sessionSockets.delete(sessionKey);
-                try { cleanSession(sessionPath); } catch {}
-                try { cleanSession(tempStatePath); } catch {}
+                cleanSession(sessionPath);
+                cleanSession(tempStatePath);
             } else {
                 if (!sessionSockets.has(sessionKey)) setTimeout(() => startSocket(sessionKey, userNumber), 4000);
             }
@@ -100,47 +110,35 @@ https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5?mode=gi_t
 
     sock.ev.on("creds.update", saveCreds);
 
-    return { sock, isReady: () => readyForPairing };
+    return sock;
 }
 
 // ==============================
-// OPEN HTML
-router.get('/', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'pair.html'));
-});
+// Serve pair.html
+router.get('/page', (req, res) => res.sendFile(path.join(process.cwd(), 'pair.html')));
 
 // ==============================
-// PAIR CODE API
+// Pairing API - return QR code
 router.get('/code', async (req, res) => {
-
     try {
         let number = req.query.number;
-
         if (!number) return res.json({ code: "Number Required" });
 
-        number = number.replace(/[^0-9]/g, '');
+        number = number.replace(/\D/g, '');
+        if (!number.startsWith("254")) return res.json({ code: "Invalid number format" });
 
-        if (!number.startsWith("254")) {
-            return res.json({ code: "Use 254XXXXXXXXX format" });
-        }
+        // Reuse socket if exists, otherwise start
+        let sock = sessionSockets.get(number);
+        if (!sock) sock = await startSocket(number, number);
 
-        // 🔥 ALWAYS NEW SOCKET FOR PAIRING
-        const sock = await startSocket(number);
+        // Return QR if not paired yet
+        const qr = qrCodes.get(number);
+        if (!qr) return res.json({ code: "Waiting for QR… refresh in a few seconds" });
 
-        // 🔥 CRITICAL WAIT (handshake)
-        await sleep(2500);
-
-        const code = await sock.requestPairingCode(number).catch(() => null);
-
-        if (!code) return res.json({ code: "Try again" });
-
-        return res.json({
-            code: code.match(/.{1,4}/g).join("-")
-        });
-
+        return res.json({ code: qr });
     } catch (err) {
         console.log("PAIR ERROR:", err);
-        return res.json({ code: "Server Error" });
+        return res.json({ code: "Service Unavailable" });
     }
 });
 
