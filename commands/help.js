@@ -54,6 +54,11 @@ async function helpCommand(sock, chatId, message) {
 │ ★̷ .staff
 │ ★̷ .admins
 │ ★̷ .vv
+│ ★̷ .announcement
+│ ★̷ .antiedit on/off
+│ ★̷ .dpdownload
+│ ★̷ .alwaysoffline on/off
+│ ★̷ .autostatuslike on/off
 │ ★̷ .v
 │ ★̷ .trt <text> <lang>
 │ ★̷ .ss <link>

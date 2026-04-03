@@ -2,109 +2,39 @@ const fs = require("fs");
 const path = require("path");
 
 async function depairCommand(sock, chatId, message) {
-
     try {
-
-        /* =============================
-           OWNER AUTH (FIXED)
-        ============================= */
-
-        const OWNER_NUMBER = "254768161116";
-
-        const sender =
-            message.key.participant || message.key.remoteJid;
-
-        const senderNumber =
-            sender?.split("@")[0] || "";
-
-        if (senderNumber !== OWNER_NUMBER) {
-            await sock.sendMessage(chatId, {
-                text: "❌ This command is owner only."
-            });
-            return;
-        }
-
-        /* =============================
-           PARSE MESSAGE TEXT (FIXED)
-        ============================= */
-
-        const rawText =
-            message.message?.conversation ||
-            message.message?.extendedTextMessage?.text ||
-            "";
-
+        const rawText = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
         const parts = rawText.trim().split(/\s+/);
 
         if (!parts[1]) {
-            await sock.sendMessage(chatId, {
-                text: "⚠ Usage:\n.depair 2547xxxxxxxx"
-            });
+            await sock.sendMessage(chatId, { text: "⚠ Usage:\n.depair 2547XXXXXXXX" });
             return;
         }
 
-        let number = parts[1].replace(/[^0-9]/g, '');
-
+        const number = parts[1].replace(/\D/g, "");
         const SESSION_ROOT = "./session_pair";
         const sessionPath = path.join(SESSION_ROOT, number);
         const trackFile = "./data/paired_users.json";
 
-        /* =============================
-           CHECK SESSION EXISTS
-        ============================= */
-
         if (!fs.existsSync(sessionPath)) {
-            await sock.sendMessage(chatId, {
-                text: "⚠ Session not found."
-            });
+            await sock.sendMessage(chatId, { text: "⚠ Session not found." });
             return;
         }
 
-        /* =============================
-           DELETE SESSION
-        ============================= */
-
-        fs.rmSync(sessionPath, {
-            recursive: true,
-            force: true
-        });
-
-        /* =============================
-           REMOVE FROM TRACK FILE
-        ============================= */
+        fs.rmSync(sessionPath, { recursive: true, force: true });
 
         if (fs.existsSync(trackFile)) {
-
             let users = [];
-
-            try {
-                users = JSON.parse(
-                    fs.readFileSync(trackFile, "utf8")
-                );
-            } catch {
-                users = [];
-            }
-
+            try { users = JSON.parse(fs.readFileSync(trackFile, "utf8")); } catch {}
             users = users.filter(u => u.number !== number);
-
-            fs.writeFileSync(
-                trackFile,
-                JSON.stringify(users, null, 2)
-            );
+            fs.writeFileSync(trackFile, JSON.stringify(users, null, 2));
         }
 
-        await sock.sendMessage(chatId, {
-            text: `✅ +${number} depaired successfully.`
-        });
+        await sock.sendMessage(chatId, { text: `✅ +${number} depaired successfully.` });
 
     } catch (err) {
-
-        console.log("Depair Command Error:", err);
-
-        try {
-            await sock.sendMessage(chatId, {
-                text: "⚠ Depair runtime error."
-            });
-        } catch {}
+        console.error("Depair Command Error:", err);
+        await sock.sendMessage(chatId, { text: "⚠ Depair runtime error." }).catch(() => {});
     }
 }
 

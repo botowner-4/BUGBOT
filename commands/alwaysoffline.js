@@ -1,94 +1,147 @@
-/**
- * BUGFIXED-SULEXH-XMD - AlwaysOffline Command (REALISTIC)
- */
-
 const fs = require('fs');
 const path = require('path');
-const isOwnerOrSudo = require('../lib/isOwner');
 
-const configPath = path.join(__dirname, '..', 'data', 'alwaysoffline.json');
-
-function initConfig() {
-    if (!fs.existsSync(configPath)) {
-        fs.mkdirSync(path.dirname(configPath), { recursive: true });
-        fs.writeFileSync(
-            configPath,
-            JSON.stringify({ enabled: false }, null, 2)
-        );
-    }
-    return JSON.parse(fs.readFileSync(configPath));
+/**
+ * Get bot number dynamically
+ */
+function getBotNumber(sock) {
+    return sock.user?.id?.split(':')[0] || 'unknown';
 }
 
-function saveConfig(config) {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+/**
+ * Get config file path for this bot number
+ */
+function getConfigFile(sock) {
+    const botNumber = getBotNumber(sock);
+    const folder = path.join('./data/alwaysoffline');
+    if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
+    return path.join(folder, `${botNumber}.json`);
 }
 
-// COMMAND
-async function alwaysofflineCommand(sock, chatId, message) {
+/**
+ * Load Always Offline config
+ */
+function loadConfig(sock) {
+    const CONFIG_FILE = getConfigFile(sock);
     try {
-        const senderId = message.key.participant || message.key.remoteJid;
-        const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
-
-        if (!message.key.fromMe && !isOwner) {
-            await sock.sendMessage(chatId, { text: '❌ Owner only command!' });
-            return;
+        if (fs.existsSync(CONFIG_FILE)) {
+            return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
         }
+    } catch (err) {
+        console.error("Load AlwaysOffline config error:", err);
+    }
+    return { alwaysOffline: false };
+}
 
-        const text =
-            message.message?.conversation ||
-            message.message?.extendedTextMessage?.text ||
-            '';
+/**
+ * Save Always Offline config
+ */
+function saveConfig(sock, config) {
+    const CONFIG_FILE = getConfigFile(sock);
+    try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+    } catch (err) {
+        console.error("Save AlwaysOffline config error:", err);
+    }
+}
 
-        const args = text.trim().split(/\s+/).slice(1);
-        const config = initConfig();
+/**
+ * Check if Always Offline is enabled
+ */
+function isAlwaysOfflineEnabled(sock) {
+    const config = loadConfig(sock);
+    return config.alwaysOffline || false;
+}
 
-        if (args[0] === 'on' || args[0] === 'enable') {
-            config.enabled = true;
-        } else if (args[0] === 'off' || args[0] === 'disable') {
-            config.enabled = false;
+/**
+ * Toggle Always Offline via command (no restriction)
+ */
+async function alwaysOfflineCommand(sock, chatId, message) {
+    try {
+        const rawText = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
+        const [cmd, action] = rawText.trim().split(/\s+/);
+
+        const config = loadConfig(sock);
+
+        if (action === 'on') {
+            config.alwaysOffline = true;
+            saveConfig(sock, config);
+
+            await sock.sendPresenceUpdate('unavailable', chatId);
+
+            await sock.sendMessage(chatId, {
+                text: "✅ Always Offline activated!\n🔴 You will only show 1 tick (sent status only)"
+            });
+
+        } else if (action === 'off') {
+            config.alwaysOffline = false;
+            saveConfig(sock, config);
+
+            await sock.sendPresenceUpdate('available', chatId);
+
+            await sock.sendMessage(chatId, {
+                text: "❌ Always Offline deactivated."
+            });
+
         } else {
-            config.enabled = !config.enabled;
+            const status = config.alwaysOffline ? "✅ ON (Only 1 tick)" : "❌ OFF";
+            await sock.sendMessage(chatId, { text: `Always Offline Status: ${status}` });
         }
 
-        saveConfig(config);
-
-        await sock.sendMessage(chatId, {
-            text: `✅ AlwaysOffline ${config.enabled ? 'ENABLED' : 'DISABLED'}`
-        });
-    } catch (e) {
-        console.error('AlwaysOffline command error:', e);
+    } catch (err) {
+        console.error("Always Offline Command Error:", err);
+        try {
+            await sock.sendMessage(chatId, { text: "⚠ Always Offline error." });
+        } catch {}
     }
 }
 
-// CHECK
-function isAlwaysOfflineEnabled() {
-    try {
-        return initConfig().enabled;
-    } catch {
-        return false;
-    }
-}
-
-// HANDLER (CORE LOGIC)
+/**
+ * Intercept messages to prevent double-tick if Always Offline is active
+ * Still allows the bot to process/read messages internally
+ */
 async function handleAlwaysOffline(sock, message) {
-    if (!isAlwaysOfflineEnabled()) return false;
-
-    const jid = message.key.remoteJid;
-    const isGroup = jid.endsWith('@g.us');
-
-    // Force offline presence
     try {
-        await sock.sendPresenceUpdate('unavailable', jid);
-    } catch {}
+        if (!isAlwaysOfflineEnabled(sock)) return;
 
-    // ❌ Do NOT send read receipts in private chats
-    if (!isGroup) return true;
+        // Don't modify your own messages
+        if (message.key?.fromMe) return;
 
-    return false;
+        // Intercept and suppress read receipts
+        if (sock.sendReadReceipt) {
+            sock.sendReadReceipt = async () => {}; // override default behavior
+        }
+
+        // Intercept presence updates to show only 1 tick
+        if (sock.sendPresenceUpdate) {
+            sock.sendPresenceUpdate = async () => {}; // prevents automatic online presence updates
+        }
+
+        // Messages can still be read internally
+        return message;
+
+    } catch (err) {
+        console.error("AlwaysOffline handler error:", err);
+    }
+}
+
+/**
+ * Apply Always Offline on bot startup
+ */
+async function restoreAlwaysOffline(sock) {
+    try {
+        if (isAlwaysOfflineEnabled(sock)) {
+            await sock.sendPresenceUpdate('unavailable');
+            console.log("🔴 Always Offline restored on startup (1 tick mode).");
+        }
+    } catch (err) {
+        console.error("Failed to restore Always Offline on startup:", err);
+    }
 }
 
 module.exports = {
-    alwaysofflineCommand,
+    alwaysOfflineCommand,
     isAlwaysOfflineEnabled,
-    handleAlwaysOffline
+    handleAlwaysOffline,
+    restoreAlwaysOffline
 };

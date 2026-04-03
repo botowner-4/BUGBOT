@@ -1,83 +1,42 @@
 const fs = require("fs");
 
 async function userCommand(sock, chatId, message) {
-
     try {
-
-        /* =============================
-           OWNER AUTH (FIXED)
-        ============================= */
-
-        const OWNER_NUMBER = "254768161116";
-
-        const sender =
-            message.key.participant || message.key.remoteJid;
-
-        const senderNumber =
-            sender?.split("@")[0] || "";
-
-        if (senderNumber !== OWNER_NUMBER) {
-            await sock.sendMessage(chatId, {
-                text: "❌ This command is owner only."
-            });
-            return;
-        }
-
-        /* =============================
-           TRACK FILE CHECK
-        ============================= */
-
+        // Path to track paired users
         const trackFile = "./data/paired_users.json";
 
+        // Check if track file exists
         if (!fs.existsSync(trackFile)) {
-            await sock.sendMessage(chatId, {
-                text: "⚠ No paired users found."
-            });
+            await sock.sendMessage(chatId, { text: "⚠ No paired users found." });
             return;
         }
 
-        /* =============================
-           SAFE JSON PARSE
-        ============================= */
-
+        // Safely read JSON
         let users = [];
-
         try {
-            users = JSON.parse(
-                fs.readFileSync(trackFile, "utf8")
-            );
+            users = JSON.parse(fs.readFileSync(trackFile, "utf8"));
         } catch {
             users = [];
         }
 
+        // Check if any paired users exist
         if (!users.length) {
-            await sock.sendMessage(chatId, {
-                text: "⚠ No active paired users."
-            });
+            await sock.sendMessage(chatId, { text: "⚠ No active paired users." });
             return;
         }
 
-        /* =============================
-           BUILD OUTPUT TEXT
-        ============================= */
-
+        // Build output
         let text = "👑 *Active Paired Users*\n\n";
-
         users.forEach((u, i) => {
             text += `${i + 1}. +${u.number}\n`;
         });
 
+        // Send list to chat
         await sock.sendMessage(chatId, { text });
 
     } catch (err) {
-
-        console.log("User Command Error:", err);
-
-        try {
-            await sock.sendMessage(chatId, {
-                text: "⚠ User runtime error."
-            });
-        } catch {}
+        console.error("User Command Error:", err);
+        await sock.sendMessage(chatId, { text: "⚠ User runtime error." }).catch(() => {});
     }
 }
 
