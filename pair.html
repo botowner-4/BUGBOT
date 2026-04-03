@@ -183,7 +183,7 @@ h3{
     <p>Enter your number with country code</p>
 
     <div class="input-container">
-      <input id="number" placeholder="2547xxxxxx">
+      <input id="number" placeholder="e.g. 2547xxxxxx or 1974xxxxxxx">
       <button id="submit">GO</button>
     </div>
 
@@ -199,12 +199,10 @@ h3{
 <div class="music-btn" id="musicBtn">⏸ Music</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
-
 <script>
 let output = document.getElementById("pair");
 let btn = document.getElementById("submit");
 let input = document.getElementById("number");
-
 let loadingInterval;
 
 /* ⏰ TIME */
@@ -231,12 +229,9 @@ function stopLoading(){
 async function copyCode(){
   let el = document.getElementById("copy");
   let text = el.innerText.replace("CODE: ","");
-
   await navigator.clipboard.writeText(text);
-
   el.innerText = "COPIED!";
   el.style.color = "lime";
-
   setTimeout(()=>{
     el.innerText = "CODE: " + text;
     el.style.color = "white";
@@ -248,7 +243,6 @@ function typeCode(code){
   let i = 0;
   output.innerHTML = `<div id="copy" onclick="copyCode()">CODE: </div>`;
   let el = document.getElementById("copy");
-
   let typer = setInterval(()=>{
     el.innerText = "CODE: " + code.slice(0, i++);
     if(i > code.length) clearInterval(typer);
@@ -257,20 +251,16 @@ function typeCode(code){
 
 /* 🚀 SUBMIT */
 btn.onclick = async () => {
-
   let num = input.value.trim();
-
   if(!num){
     output.innerHTML = "⚠ Enter number";
     return;
   }
 
+  // Remove all non-digits
   num = num.replace(/\D/g,"");
 
-  if(!num.startsWith("254")){
-    output.innerHTML = "❌ Use 254XXXXXXXXX";
-    return;
-  }
+  // ✅ General numbers: no country code restrictions
 
   btn.disabled = true;
   startLoading();
@@ -296,7 +286,6 @@ btn.onclick = async () => {
   }catch(err){
     stopLoading();
     btn.disabled = false;
-
     output.innerHTML = `
       ❌ Server Error<br><br>
       <button onclick="retry()">🔄 Retry</button>
@@ -312,14 +301,12 @@ function retry(){
 /* 🎵 MUSIC */
 let music=document.getElementById("bgMusic");
 let musicBtn=document.getElementById("musicBtn");
-
 window.onload=()=>{
   music.volume=0.4;
   music.play().catch(()=>{
     document.body.onclick=()=>music.play();
   });
 };
-
 musicBtn.onclick=()=>{
   if(music.paused){
     music.play();
@@ -332,4 +319,4 @@ musicBtn.onclick=()=>{
 </script>
 
 </body>
-</html>
+    </html>
