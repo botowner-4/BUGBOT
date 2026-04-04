@@ -65,6 +65,7 @@ const hadithCommand = require('./commands/hadith');
 const { antieditCommand } = require('./commands/antiedit');
 const { autolikestatusCommand } = require('./commands/autolikestatus');
 const dpdownloadCommand = require('./commands/dpdownload');
+const addWhitelistCommand = require("./commands/addwhitelist");
 const unmuteCommand = require('./commands/unmute');
 const stickerCommand = require('./commands/sticker');
 const isAdmin = require('./lib/isAdmin');
@@ -784,7 +785,10 @@ case userMessage === '.v': {
             case userMessage === '.alive':
                 await aliveCommand(sock, chatId, message);
                 break;
-            case userMessage.startsWith('.mention '):
+           case userMessage === '.addwhitelist':
+                await aliveCommand(sock, chatId, message);
+                break;
+          case userMessage.startsWith('.mention '):
                 {
                     const args = userMessage.split(' ').slice(1).join(' ');
                     const isOwner = message.key.fromMe || senderIsSudo;
