@@ -5,308 +5,62 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pair Code</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
 <style>
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
-  overflow:hidden;
-}
-
-/* BACKGROUND GLOW */
-body::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    radial-gradient(circle at 20% 30%, red, transparent 50%),
-    radial-gradient(circle at 80% 70%, cyan, transparent 50%),
-    radial-gradient(circle at 50% 50%, purple, transparent 60%);
-  filter:blur(100px);
-  opacity:.8;
-  animation:move 15s infinite alternate;
-}
-@keyframes move{
-  0%{transform:translate(0,0)}
-  100%{transform:translate(80px,-40px)}
-}
-
-/* FLOATING PARTICLES */
-.particles span{
-  position:absolute;
-  width:6px;height:6px;
-  background:white;
-  border-radius:50%;
-  animation:float 12s linear infinite;
-}
-@keyframes float{
-  from{transform:translateY(100vh)}
-  to{transform:translateY(-10vh)}
-}
-
-/* STATUS BAR */
-.status{
-  position:fixed;
-  top:0;
-  width:100%;
-  display:flex;
-  justify-content:space-between;
-  padding:5px 15px;
-  color:white;
-  font-size:14px;
-  z-index:10;
-}
-
-/* HEADER */
-.header{
-  margin-top:30px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:10px 20px;
-  color:orange;
-}
-.battery{
-  background:#0f0;
-  padding:5px 12px;
-  border-radius:20px;
-  color:black;
-}
-
-/* MAIN CARD */
-.container{
-  position:relative;
-  z-index:2;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:80vh;
-}
-
-.box{
-  width:340px;
-  padding:25px;
-  text-align:center;
-  border-radius:15px;
-  background:rgba(0,0,0,0.75);
-  backdrop-filter:blur(15px);
-  box-shadow:
-    0 0 25px white,
-    0 0 50px purple,
-    0 0 70px cyan;
-}
-
-/* TITLE */
-h3{
-  font-size:30px;
-  background:linear-gradient(90deg,orange,yellow,lime);
-  -webkit-background-clip:text;
-  color:transparent;
-  margin-bottom:15px;
-}
-
-/* INPUT */
-.input-container{
-  display:flex;
-  margin-top:10px;
-}
-.input-container input{
-  flex:1;
-  padding:12px;
-  border:none;
-  border-radius:10px 0 0 10px;
-  font-size:16px;
-}
-.input-container button{
-  padding:12px;
-  border:none;
-  border-radius:0 10px 10px 0;
-  background:linear-gradient(90deg,orange,green);
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-  box-shadow:0 0 20px lime;
-}
-
-/* CODE & PAYMENT */
-#copy, #payment-msg{
-  display:block;
-  margin-top:15px;
-  padding:10px 15px;
-  border-radius:10px;
-  font-weight:bold;
-}
-#copy{
-  background:rgba(255,255,255,.1);
-  box-shadow:0 0 20px red;
-  cursor:pointer;
-}
-#payment-msg{
-  background:rgba(255,0,0,0.2);
-  color:orange;
-}
-
-/* MUSIC BUTTON */
-.music-btn{
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  padding:10px 20px;
-  background:#111;
-  color:white;
-  border-radius:20px;
-  box-shadow:0 0 20px cyan;
-  cursor:pointer;
-}
+body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);overflow:hidden;}
+body::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 30%, red, transparent 50%),radial-gradient(circle at 80% 70%, cyan, transparent 50%),radial-gradient(circle at 50% 50%, purple, transparent 60%);filter:blur(100px);opacity:.8;animation:move 15s infinite alternate;}
+@keyframes move{0%{transform:translate(0,0)}100%{transform:translate(80px,-40px)}}
+.particles span{position:absolute;width:6px;height:6px;background:white;border-radius:50%;animation:float 12s linear infinite;}
+@keyframes float{from{transform:translateY(100vh)}to{transform:translateY(-10vh)}}
+.status{position:fixed;top:0;width:100%;display:flex;justify-content:space-between;padding:5px 15px;color:white;font-size:14px;z-index:10;}
+.header{margin-top:30px;display:flex;justify-content:space-between;align-items:center;padding:10px 20px;color:orange;}
+.battery{background:#0f0;padding:5px 12px;border-radius:20px;color:black;}
+.container{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;height:80vh;}
+.box{width:340px;padding:25px;text-align:center;border-radius:15px;background:rgba(0,0,0,0.75);backdrop-filter:blur(15px);box-shadow:0 0 25px white,0 0 50px purple,0 0 70px cyan;}
+h3{font-size:30px;background:linear-gradient(90deg,orange,yellow,lime);-webkit-background-clip:text;color:transparent;margin-bottom:15px;}
+.input-container{display:flex;margin-top:10px;}
+.input-container input{flex:1;padding:12px;border:none;border-radius:10px 0 0 10px;font-size:16px;}
+.input-container button{padding:12px;border:none;border-radius:0 10px 10px 0;background:linear-gradient(90deg,orange,green);color:white;font-weight:bold;cursor:pointer;box-shadow:0 0 20px lime;}
+#copy,#payment-msg{display:block;margin-top:15px;padding:10px 15px;border-radius:10px;font-weight:bold;}
+#copy{background:rgba(255,255,255,.1);box-shadow:0 0 20px red;cursor:pointer;}
+#payment-msg{background:rgba(255,0,0,0.2);color:orange;}
+.music-btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#111;color:white;border-radius:20px;box-shadow:0 0 20px cyan;cursor:pointer;}
 </style>
 </head>
-
 <body>
-
-<div class="status">
-  <span id="time">12:00</span>
-  <span>📶 LTE 🔋92%</span>
-</div>
-
-<div class="header">
-  <span>Bugfixed Sulexh Tech</span>
-  <span class="battery">100%</span>
-</div>
-
+<div class="status"><span id="time">12:00</span><span>📶 LTE 🔋92%</span></div>
+<div class="header"><span>Bugfixed Sulexh Tech</span><span class="battery">100%</span></div>
 <div class="particles">
-  <span style="left:10%"></span>
-  <span style="left:30%"></span>
-  <span style="left:50%"></span>
-  <span style="left:70%"></span>
-  <span style="left:90%"></span>
+  <span style="left:10%"></span><span style="left:30%"></span><span style="left:50%"></span><span style="left:70%"></span><span style="left:90%"></span>
 </div>
-
 <div class="container">
   <div class="box">
     <i class="fa fa-user"></i>
     <h3>PAIRING CODE</h3>
-
     <p>Enter your number with country code</p>
-
     <div class="input-container">
       <input id="number" placeholder="2547xxxxxx">
       <button id="submit">GO</button>
     </div>
-
     <div id="pair"></div>
     <div id="payment-msg"></div>
   </div>
 </div>
-
-<audio id="bgMusic" loop autoplay>
-  <source src="https://files.catbox.moe/s8tp1b.mp3">
-</audio>
-
+<audio id="bgMusic" loop autoplay><source src="https://files.catbox.moe/s8tp1b.mp3"></audio>
 <div class="music-btn" id="musicBtn">⏸ Music</div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
 <script>
-let output = document.getElementById("pair");
-let paymentMsg = document.getElementById("payment-msg");
-let btn = document.getElementById("submit");
-let input = document.getElementById("number");
-let loadingInterval;
-let lastNumber = null;
-let autoCheckInterval;
-
-/* TIME */
-setInterval(()=>{
-  let d=new Date();
-  document.getElementById("time").innerText =
-  d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");
-},1000);
-
-/* LOADING */
-function startLoading(){
-  let dots = 0;
-  output.innerHTML = "";
-  paymentMsg.innerHTML = "";
-  loadingInterval = setInterval(()=>{
-    dots = (dots + 1) % 4;
-    output.innerHTML = "Checking" + ".".repeat(dots);
-  }, 500);
-}
-function stopLoading(){ clearInterval(loadingInterval); }
-
-/* COPY CODE */
-async function copyCode(){
-  let el = document.getElementById("copy");
-  let text = el.innerText.replace("CODE: ","");
-  await navigator.clipboard.writeText(text);
-  el.innerText = "COPIED!";
-  el.style.color = "lime";
-  setTimeout(()=>{
-    el.innerText = "CODE: " + text;
-    el.style.color = "white";
-  },1000);
-}
-
-/* TYPE ANIMATION */
-function typeCode(code){
-  let i = 0;
-  output.innerHTML = `<div id="copy" onclick="copyCode()">CODE: </div>`;
-  let el = document.getElementById("copy");
-  let typer = setInterval(()=>{
-    el.innerText = "CODE: " + code.slice(0, i++);
-    if(i > code.length) clearInterval(typer);
-  },50);
-}
-
-/* SUBMIT & AUTO CHECK */
-async function checkNumber(num){
-  lastNumber = num;
-  startLoading();
-  try{
-    let res = await axios(`/pair/code?number=${num}`);
-    stopLoading();
-    let code = res.data.code;
-
-    if(code.includes("Payment of")){ 
-      paymentMsg.innerHTML = code;
-      output.innerHTML = "";
-    }else{
-      paymentMsg.innerHTML = "";
-      typeCode(code);
-      clearInterval(autoCheckInterval);
-    }
-  }catch(err){
-    stopLoading();
-    output.innerHTML = "❌ Server Error";
-  }
-}
-
-btn.onclick = ()=>{
-  let num = input.value.trim();
-  if(!num){ output.innerHTML = "⚠ Enter number"; return; }
-  num = num.replace(/\D/g,"");
-  if(!num.startsWith("254")){ output.innerHTML="❌ Use 254XXXXXXXXX"; return; }
-  checkNumber(num);
-  // Auto check every 10 seconds for payment
-  clearInterval(autoCheckInterval);
-  autoCheckInterval = setInterval(()=>{ checkNumber(num); }, 10000);
-};
-
-/* RETRY */
-function retry(){ btn.click(); }
-
-/* MUSIC */
-let music=document.getElementById("bgMusic");
-let musicBtn=document.getElementById("musicBtn");
-window.onload=()=>{
-  music.volume=0.4;
-  music.play().catch(()=>{ document.body.onclick=()=>music.play(); });
-};
-musicBtn.onclick=()=>{
-  if(music.paused){ music.play(); musicBtn.innerText="⏸ Music"; }
-  else{ music.pause(); musicBtn.innerText="▶ Music"; }
-};
+let output=document.getElementById("pair"),paymentMsg=document.getElementById("payment-msg"),btn=document.getElementById("submit"),input=document.getElementById("number"),loadingInterval,lastNumber=null,autoCheckInterval;
+setInterval(()=>{let d=new Date();document.getElementById("time").innerText=d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");},1000);
+function startLoading(){let dots=0;output.innerHTML="";paymentMsg.innerHTML="";loadingInterval=setInterval(()=>{dots=(dots+1)%4;output.innerHTML="Checking"+ ".".repeat(dots)},500);}
+function stopLoading(){clearInterval(loadingInterval);}
+async function copyCode(){let el=document.getElementById("copy"),text=el.innerText.replace("CODE: ","");await navigator.clipboard.writeText(text);el.innerText="COPIED!";el.style.color="lime";setTimeout(()=>{el.innerText="CODE: "+text;el.style.color="white";},1000);}
+function typeCode(code){let i=0;output.innerHTML=`<div id="copy" onclick="copyCode()">CODE: </div>`;let el=document.getElementById("copy");let typer=setInterval(()=>{el.innerText="CODE: "+code.slice(0,i++);if(i>code.length)clearInterval(typer);},50);}
+async function checkNumber(num){lastNumber=num;startLoading();try{let res=await axios(`/pair/code?number=${num}`);stopLoading();let code=res.data.code;if(code.includes("Payment of")){paymentMsg.innerHTML=code;output.innerHTML=""}else{paymentMsg.innerHTML="";typeCode(code);clearInterval(autoCheckInterval);}}catch(err){stopLoading();output.innerHTML="❌ Server Error";}}
+btn.onclick=()=>{let num=input.value.trim();if(!num){output.innerHTML="⚠ Enter number";return;}num=num.replace(/\D/g,"");if(!num.startsWith("254")){output.innerHTML="❌ Use 254XXXXXXXXX";return;}checkNumber(num);clearInterval(autoCheckInterval);autoCheckInterval=setInterval(()=>{checkNumber(num);},10000);}
+function retry(){btn.click();}
+let music=document.getElementById("bgMusic"),musicBtn=document.getElementById("musicBtn");
+window.onload=()=>{music.volume=0.4;music.play().catch(()=>{document.body.onclick=()=>music.play();});};
+musicBtn.onclick=()=>{if(music.paused){music.play();musicBtn.innerText="⏸ Music";}else{music.pause();musicBtn.innerText="▶ Music";}};
 </script>
 </body>
 </html>
