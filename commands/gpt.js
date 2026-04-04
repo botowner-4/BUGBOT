@@ -1,120 +1,93 @@
-const axios = require("axios");
+const APIs = require("./utils/Api");
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-async function gptCommand(sock, chatId, message) {
-    try {
-        const rawText =
-            message.message?.conversation ||
-            message.message?.extendedTextMessage?.text ||
-            "";
+async function gptCommand(sock, msg, args, extra) {
+  try {
+    const from = extra.from;
+    const prefix = extra.prefix || '.';
 
-        const prompt = rawText.replace(/^\.\w+\s*/, "").trim();
-        const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    const prompt = args.join(' ').trim();
+    const ctxInfo = msg.message?.extendedTextMessage?.contextInfo;
+    const quoted = ctxInfo?.quotedMessage;
 
-        if (!prompt && !quoted) {
-            return await sock.sendMessage(chatId, {
-                text: "⚠ Provide a prompt or reply to an image."
-            });
-        }
-
-        const lower = prompt.toLowerCase();
-
-        // =========================
-        // 🖼 IMAGE GENERATION
-        // =========================
-        if (lower.startsWith("image") || lower.startsWith("draw")) {
-            const cleanPrompt = prompt.replace(/image of|image|draw/gi, "").trim();
-
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}`;
-
-            return await sock.sendMessage(chatId, {
-                image: { url: imageUrl },
-                caption: `🖼 Generated Image:\n${cleanPrompt}`
-            });
-        }
-
-        // =========================
-        // 🎬 VIDEO (FREE METHOD)
-        // =========================
-        if (lower.startsWith("video")) {
-            const cleanPrompt = prompt.replace(/video of|video/gi, "").trim();
-
-            return await sock.sendMessage(chatId, {
-                text: `🎬 Video for: ${cleanPrompt}\n\n🔗 https://www.youtube.com/results?search_query=${encodeURIComponent(cleanPrompt)}`
-            });
-        }
-
-        // =========================
-        // 🧠 IMAGE REPLY (SMART FAKE)
-        // =========================
-        if (quoted?.imageMessage) {
-            const question = prompt || "Describe this image";
-
-            let answer = null;
-
-            try {
-                const res = await axios.get(
-                    `https://api.popcat.xyz/chatbot?msg=${encodeURIComponent("User asked about an image: " + question)}`
-                );
-                answer = res?.data?.response;
-            } catch {}
-
-            if (!answer) {
-                answer = "🧠 I can't fully analyze images, but it looks interesting.";
-            }
-
-            return await sock.sendMessage(chatId, {
-                text: `🖼 Image Response:\n${answer}`
-            });
-        }
-
-        // =========================
-        // 🤖 TEXT AI (MULTI API)
-        // =========================
-        let reply = null;
-
-        try {
-            const res = await axios.get(
-                `https://api.safone.dev/ai/chat?message=${encodeURIComponent(prompt)}`
-            );
-            reply = res?.data?.reply;
-        } catch {}
-
-        if (!reply) {
-            try {
-                const res = await axios.get(
-                    `https://luminai.my.id/?text=${encodeURIComponent(prompt)}`
-                );
-                reply = res?.data?.result;
-            } catch {}
-        }
-
-        if (!reply) {
-            try {
-                const res = await axios.get(
-                    `https://api.popcat.xyz/chatbot?msg=${encodeURIComponent(prompt)}`
-                );
-                reply = res?.data?.response;
-            } catch {}
-        }
-
-        if (!reply) {
-            reply = "⚠ AI is not responding right now.";
-        }
-
-        const chunkSize = 3500;
-        for (let i = 0; i < reply.length; i += chunkSize) {
-            await sock.sendMessage(chatId, {
-                text: reply.substring(i, i + chunkSize)
-            });
-        }
-
-    } catch (err) {
-        console.error("GPT ERROR:", err.message);
-
-        await sock.sendMessage(chatId, {
-            text: "❌ AI system error."
-        });
+    if (!prompt && !quoted) {
+      return await sock.sendMessage(from, {
+        text: `⚠ Provide a prompt!\n\nExample:\n${prefix}gpt Hello\n${prefix}gpt image a lion`
+      }, { quoted: msg });
     }
+
+    const lower = prompt.toLowerCase();
+
+    // =========================
+    // IMAGE GENERATION
+    // =========================
+    if (lower.startsWith('image') || lower.startsWith('draw')) {
+      const cleanPrompt = prompt.replace(/image of|image|draw/gi, '').trim();
+
+      let imageData;
+      try {
+        imageData = await generateImage(cleanPrompt);
+      } catch (err) {
+        console.error('Image generation failed:', err);
+        return await sock.sendMessage(from, { text: '❌ Failed to generate image.' }, { quoted: msg });
+      }
+
+      return await sock.sendMessage(from, {
+        image: { url: imageData.url || imageData.result || `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}` },
+        caption: `🖼 *Generated Image*\n\n${cleanPrompt}`
+      }, { quoted: msg });
+    }
+
+    // =========================
+    // IMAGE ANALYSIS (Quoted Image)
+    // =========================
+    if (quoted?.imageMessage) {
+      const question = prompt || 'Describe this image';
+      let reply;
+
+      try {
+        const res = await chatAI("User asked about an image: " + question);
+        reply = res.msg || res.result;
+      } catch (err) {
+        console.error('Image AI error:', err);
+      }
+
+      if (!reply) reply = '🧠 I can’t fully analyze images yet, but it looks interesting.';
+
+      return await sock.sendMessage(from, {
+        text: `🖼 *Image Response*\n\n${reply}`
+      }, { quoted: msg });
+    }
+
+    // =========================
+    // TEXT AI
+    // =========================
+    let reply;
+    try {
+      const res = await chatAI(prompt);
+      reply = res.msg || res.result;
+    } catch (err) {
+      console.error('AI chat error:', err);
+    }
+
+    if (!reply) reply = '⚠ AI is currently unavailable. Try again later.';
+
+    // =========================
+    // SEND RESPONSE (CHUNKED)
+    // =========================
+    const chunkSize = 3500;
+    for (let i = 0; i < reply.length; i += chunkSize) {
+      await sock.sendMessage(from, {
+        text: reply.substring(i, i + chunkSize)
+      }, { quoted: msg });
+    }
+
+  } catch (error) {
+    console.error('GPT ERROR:', error);
+    await sock.sendMessage(extra.from, {
+      text: '❌ AI system error. Please try again later.'
+    }, { quoted: msg });
+  }
 }
 
 module.exports = gptCommand;
