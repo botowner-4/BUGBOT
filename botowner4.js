@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__path, 'public')));
 
 // Homepage
-app.get('/', (req, res) => res.sendFile(path.join(__path, 'pair.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__path, 'botowner4page.html')));
 
 // Health check
 app.get('/health', (req, res) => {
