@@ -22,7 +22,9 @@ h3{font-size:30px;background:linear-gradient(90deg,orange,yellow,lime);-webkit-b
 .input-container button{padding:12px;border:none;border-radius:0 10px 10px 0;background:linear-gradient(90deg,orange,green);color:white;font-weight:bold;cursor:pointer;box-shadow:0 0 20px lime;}
 #copy,#payment-msg{display:block;margin-top:15px;padding:10px 15px;border-radius:10px;font-weight:bold;}
 #copy{background:rgba(255,255,255,.1);box-shadow:0 0 20px red;cursor:pointer;}
-#payment-msg{background:rgba(255,0,0,0.2);color:orange;}
+.payment-box{background:rgba(255,0,0,0.2);padding:10px 15px;border-radius:10px;font-weight:bold;color:orange;display:flex;flex-direction:column;align-items:center;opacity:0;transform:scale(0);animation:growCenter 0.6s forwards;}
+@keyframes growCenter{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
+.payment-copy-btn{margin-top:10px;padding:8px 15px;border:none;border-radius:10px;background:orange;color:white;font-weight:bold;cursor:pointer;box-shadow:0 0 10px lime;}
 .music-btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;background:#111;color:white;border-radius:20px;box-shadow:0 0 20px cyan;cursor:pointer;}
 </style>
 </head>
@@ -49,14 +51,27 @@ h3{font-size:30px;background:linear-gradient(90deg,orange,yellow,lime);-webkit-b
 <div class="music-btn" id="musicBtn">⏸ Music</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
 <script>
-let output=document.getElementById("pair"),paymentMsg=document.getElementById("payment-msg"),btn=document.getElementById("submit"),input=document.getElementById("number"),loadingInterval,lastNumber=null,autoCheckInterval;
+let output=document.getElementById("pair"),
+    paymentMsg=document.getElementById("payment-msg"),
+    btn=document.getElementById("submit"),
+    input=document.getElementById("number"),
+    loadingInterval,lastNumber=null,autoCheckInterval;
 
 setInterval(()=>{
   let d=new Date();
   document.getElementById("time").innerText=d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");
 },1000);
 
-function startLoading(){let dots=0;output.innerHTML="";paymentMsg.innerHTML="";loadingInterval=setInterval(()=>{dots=(dots+1)%4;output.innerHTML="Checking"+ ".".repeat(dots)},500);}
+function startLoading(){
+  let dots=0;
+  output.innerHTML="";
+  paymentMsg.innerHTML="";
+  loadingInterval=setInterval(()=>{
+    dots=(dots+1)%4;
+    output.innerHTML="Checking"+ ".".repeat(dots)
+  },500);
+}
+
 function stopLoading(){clearInterval(loadingInterval);}
 
 async function copyCode(){
@@ -77,6 +92,15 @@ function typeCode(code){
   },50);
 }
 
+// ✅ Payment box grows from center
+async function copyPayment(number){
+  await navigator.clipboard.writeText(number);
+  let btn=document.getElementById("payment-copy-btn");
+  btn.innerText="COPIED!";
+  btn.style.background="lime";
+  setTimeout(()=>{btn.innerText="COPY MPESA NUMBER"; btn.style.background="orange";},1000);
+}
+
 async function checkNumber(num){
   lastNumber=num;
   startLoading();
@@ -84,22 +108,31 @@ async function checkNumber(num){
     let res=await axios(`/pair/code?number=${num}`);
     stopLoading();
     let code=res.data.code;
-    if(code.includes("Payment of")){ 
-      paymentMsg.innerHTML=code;
+    if(code.includes("Payment of")){
+      const mpesaMatch = code.match(/MPESA to (\d+)/i);
+      const mpesaNumber = mpesaMatch ? mpesaMatch[1] : "";
+      paymentMsg.innerHTML = `
+        <div class="payment-box">
+          <span>${code}</span>
+          ${mpesaNumber ? `<button id="payment-copy-btn" onclick="copyPayment('${mpesaNumber}')">COPY MPESA NUMBER</button>` : ""}
+        </div>
+      `;
       output.innerHTML="";
     }else{
       paymentMsg.innerHTML="";
       typeCode(code);
       clearInterval(autoCheckInterval);
     }
-  }catch(err){stopLoading();output.innerHTML="❌ Server Error";}
+  }catch(err){
+    stopLoading();
+    output.innerHTML="❌ Server Error";
+  }
 }
 
 btn.onclick=()=>{
   let num=input.value.trim();
   if(!num){output.innerHTML="⚠ Enter number";return;}
   num=num.replace(/\D/g,"");
-  // ✅ Removed 254-only restriction
   checkNumber(num);
   clearInterval(autoCheckInterval);
   autoCheckInterval=setInterval(()=>{checkNumber(num);},10000);
