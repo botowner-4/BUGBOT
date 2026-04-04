@@ -2,16 +2,22 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const path = require('path');
 const axios = require('axios');
+
 const app = express();
 const __path = process.cwd();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT; // ✅ Must use Render-provided PORT
+
+if (!PORT) {
+    console.error("❌ Render did not provide a PORT. Exiting.");
+    process.exit(1);
+}
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__path, 'public')));
 
 // Homepage
-app.get('/', (req, res) => res.sendFile(path.join(__path, 'botowner4page.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__path, 'pair.html')));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -21,10 +27,10 @@ app.get('/health', (req, res) => {
 app.get('/alive', (req, res) => res.send("Bot Alive"));
 
 // Mount routers
-const pairRouter = require('./pair'); // your pair.js with improvements
+const pairRouter = require('./pair');
 app.use('/pair', pairRouter);
 
-// Self-ping to prevent sleeping
+// Self-ping to prevent sleeping (optional)
 setInterval(async () => {
     try {
         const res = await axios.get(`http://localhost:${PORT}/health`);
@@ -32,7 +38,7 @@ setInterval(async () => {
     } catch (err) {
         console.log('❌ Self-ping failed:', err.message);
     }
-}, 4 * 60 * 1000); // every 4 minutes
+}, 4 * 60 * 1000);
 
 // Start server
 app.listen(PORT, "0.0.0.0", () => {
