@@ -1141,7 +1141,7 @@ case userMessage.startsWith('.dpdownload'):
     await sulexhCommand(sock, chatId, message);
     break;
             }
-            case userMessage.startsWith('.sulexh'): {
+            case userMessage.startsWith('.sulexhcal'): {
     await sulexhcalCommand(sock, chatId, message);
     break;
             }
