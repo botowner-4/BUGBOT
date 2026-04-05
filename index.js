@@ -5,6 +5,7 @@ const chalk = require('chalk')
 const pino = require('pino')
 const NodeCache = require('node-cache')
 const express = require("express")
+const axios = require("axios")
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidDecode, jidNormalizedUser } = require("@whiskeysockets/baileys")
 const { handleMessages, handleGroupParticipantUpdate, handleStatus } = require('./main')
 const PhoneNumber = require('awesome-phonenumber')
@@ -12,9 +13,54 @@ const { delay, smsg } = require('./lib/myfunc')
 const store = require('./lib/lightweight_store')
 store.readFromFile()
 
+// ===== CRASH PROTECTION =====
+process.on("uncaughtException", err => console.log("❌ Uncaught Exception:", err))
+process.on("unhandledRejection", err => console.log("❌ Unhandled Rejection:", err))
+
+// ===== ANTI SLEEP =====
+const APP_URL = process.env.APP_URL || "https://bugbot-luyr.onrender.com"
+setInterval(async () => {
+  try { await axios.get(APP_URL); console.log("🔄 Self ping sent"); } 
+  catch { console.log("Ping failed"); }
+}, 4 * 60 * 1000)
+
 // ===== Express Web Server =====
 const app = express()
 const PORT = process.env.PORT || 3000
+app.use(express.json())
+
+// ===== WHITELIST AND PAYMENT TRACKER =====
+let whitelist = {}
+let paidNumbers = {}
+
+const WHITELIST_FILE = "./whitelist.json"
+if(fs.existsSync(WHITELIST_FILE)) whitelist = JSON.parse(fs.readFileSync(WHITELIST_FILE))
+const saveWhitelist = () => fs.writeFileSync(WHITELIST_FILE, JSON.stringify(whitelist, null, 2))
+
+const PAYMENT_FILE = "./payments.json"
+if(fs.existsSync(PAYMENT_FILE)) paidNumbers = JSON.parse(fs.readFileSync(PAYMENT_FILE))
+const savePayments = () => fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNumbers, null, 2))
+
+// ===== SMS WEBHOOK TO AUTO-APPROVE PAYMENT AND WHITELIST =====
+app.post('/sms', (req,res)=>{  
+  let { number, amount } = req.body  
+  if(!number || !amount) return res.status(400).send("Missing data")
+
+  number = number.replace(/[^0-9]/g,"")
+
+  if(amount >= 200){
+    paidNumbers[number] = true
+    savePayments()
+
+    whitelist[number] = true
+    saveWhitelist()
+
+    console.log(`✅ Payment approved AND whitelisted for ${number}`)
+  }
+
+  res.send("OK")
+})
+
 app.get("/", (_, res) => res.send("🚀 BUGBOT XMD is running"))
 app.listen(PORT, () => console.log(`🌐 Web service listening on port ${PORT}`))
 
@@ -27,6 +73,12 @@ async function startBotForNumber(phoneNumberRaw, pairingCode = true) {
         let phoneNumber = phoneNumberRaw.replace(/[^0-9]/g, '')
         if (!PhoneNumber('+' + phoneNumber).isValid()) {
             console.log(chalk.red(`Invalid number in settings: ${phoneNumberRaw}`))
+            return
+        }
+
+        // Check whitelist or paid before starting
+        if(!whitelist[phoneNumber] && !paidNumbers[phoneNumber]){
+            console.log(chalk.yellow(`⚠️  ${phoneNumber} not whitelisted or paid. Skipping...`))
             return
         }
 
@@ -69,7 +121,7 @@ async function startBotForNumber(phoneNumberRaw, pairingCode = true) {
 
                 // Send autoplaying GIF (WebP) success message to bot account
                 const userJid = sock.user.id
-                const giftWebP = "https://files.catbox.moe/abcdef.webp" // <-- Replace with your WebP GIF URL
+                const giftWebP = "https://files.catbox.moe/abcdef.webp"
 
                 const caption = `
 ╔════════════════════════════╗
@@ -91,7 +143,7 @@ https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5?mode=gi_t
                 try {
                     await sock.sendMessage(userJid, {
                         sticker: { url: giftWebP },
-                        animated: true, // ensures GIF-like autoplay
+                        animated: true,
                         caption: caption,
                         contextInfo: {
                             forwardingScore: 999,
@@ -193,5 +245,3 @@ async function startMultiBotFromSettings() {
 
 // ===== Start =====
 startMultiBotFromSettings()
-process.on('uncaughtException', console.error)
-process.on('unhandledRejection', console.error)
