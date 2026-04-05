@@ -89,7 +89,7 @@ const jokeCommand = require('./commands/joke');
 const quoteCommand = require('./commands/quote');
 const factCommand = require('./commands/fact');
 const weatherCommand = require('./commands/weather');
-const newsCommand = require('./commands/news');
+const { newsCommand } = require('./commands/news');
 const kickCommand = require('./commands/kick');
 const simageCommand = require('./commands/simage');
 const attpCommand = require('./commands/attp');
@@ -699,8 +699,8 @@ case userMessage === '.v': {
                 }
                 break;
             case userMessage === '.news':
-                await newsCommand(sock, chatId);
-                break;
+    await newsCommand(sock, chatId, message);  // ✅ Add 'message' parameter
+    break;
             case userMessage.startsWith('.ttt') || userMessage.startsWith('.tictactoe'):
                 const tttText = userMessage.split(' ').slice(1).join(' ');
                 await tictactoeCommand(sock, chatId, senderId, tttText);
