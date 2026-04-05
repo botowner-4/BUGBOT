@@ -39,7 +39,7 @@ const isOwnerOrSudo = require('./lib/isOwner');
 const { autotypingCommand, isAutotypingEnabled, handleAutotypingForMessage, handleAutotypingForCommand } = require('./commands/autotyping');
 const { autoreadCommand, isAutoreadEnabled, handleAutoread } = require('./commands/autoread');
 const {
-    alwaysofflineCommand,
+    alwaysOfflineCommand,
     isAlwaysOfflineEnabled,
     handleAlwaysOfflineReadReceipt,
     restoreAlwaysOffline
