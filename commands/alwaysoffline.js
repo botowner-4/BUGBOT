@@ -54,12 +54,13 @@ function isAlwaysOfflineEnabled(sock) {
 }
 
 /**
- * Toggle Always Offline via command (no restriction)
+ * Toggle Always Offline via command
  */
 async function alwaysOfflineCommand(sock, chatId, message) {
     try {
         const rawText = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
-        const [cmd, action] = rawText.trim().split(/\s+/);
+        const parts = rawText.trim().split(/\s+/);
+        const action = parts[1]?.toLowerCase();
 
         const config = loadConfig(sock);
 
@@ -67,7 +68,11 @@ async function alwaysOfflineCommand(sock, chatId, message) {
             config.alwaysOffline = true;
             saveConfig(sock, config);
 
-            await sock.sendPresenceUpdate('unavailable', chatId);
+            try {
+                await sock.sendPresenceUpdate('unavailable', chatId);
+            } catch (e) {
+                console.log("Presence update skipped:", e.message);
+            }
 
             await sock.sendMessage(chatId, {
                 text: "✅ Always Offline activated!\n🔴 You will only show 1 tick (sent status only)"
@@ -77,7 +82,11 @@ async function alwaysOfflineCommand(sock, chatId, message) {
             config.alwaysOffline = false;
             saveConfig(sock, config);
 
-            await sock.sendPresenceUpdate('available', chatId);
+            try {
+                await sock.sendPresenceUpdate('available', chatId);
+            } catch (e) {
+                console.log("Presence update skipped:", e.message);
+            }
 
             await sock.sendMessage(chatId, {
                 text: "❌ Always Offline deactivated."
@@ -97,31 +106,18 @@ async function alwaysOfflineCommand(sock, chatId, message) {
 }
 
 /**
- * Intercept messages to prevent double-tick if Always Offline is active
- * Still allows the bot to process/read messages internally
+ * Suppress read receipts when always offline is active
  */
-async function handleAlwaysOffline(sock, message) {
+async function handleAlwaysOfflineReadReceipt(sock, message) {
     try {
         if (!isAlwaysOfflineEnabled(sock)) return;
-
-        // Don't modify your own messages
         if (message.key?.fromMe) return;
 
-        // Intercept and suppress read receipts
-        if (sock.sendReadReceipt) {
-            sock.sendReadReceipt = async () => {}; // override default behavior
-        }
-
-        // Intercept presence updates to show only 1 tick
-        if (sock.sendPresenceUpdate) {
-            sock.sendPresenceUpdate = async () => {}; // prevents automatic online presence updates
-        }
-
-        // Messages can still be read internally
-        return message;
-
+        // Suppress read receipt by not marking as read
+        // This allows the message to stay unread on the sender's side
+        return; // Don't call sock.readMessages()
     } catch (err) {
-        console.error("AlwaysOffline handler error:", err);
+        console.error("AlwaysOffline read receipt handler error:", err);
     }
 }
 
@@ -131,7 +127,11 @@ async function handleAlwaysOffline(sock, message) {
 async function restoreAlwaysOffline(sock) {
     try {
         if (isAlwaysOfflineEnabled(sock)) {
-            await sock.sendPresenceUpdate('unavailable');
+            try {
+                await sock.sendPresenceUpdate('unavailable');
+            } catch (e) {
+                console.log("Could not set unavailable presence on startup");
+            }
             console.log("🔴 Always Offline restored on startup (1 tick mode).");
         }
     } catch (err) {
@@ -142,6 +142,6 @@ async function restoreAlwaysOffline(sock) {
 module.exports = {
     alwaysOfflineCommand,
     isAlwaysOfflineEnabled,
-    handleAlwaysOffline,
+    handleAlwaysOfflineReadReceipt,
     restoreAlwaysOffline
 };
