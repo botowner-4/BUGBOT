@@ -41,7 +41,8 @@ const { autoreadCommand, isAutoreadEnabled, handleAutoread } = require('./comman
 const {
     alwaysofflineCommand,
     isAlwaysOfflineEnabled,
-    handleAlwaysOffline
+    handleAlwaysOfflineReadReceipt,
+    restoreAlwaysOffline
 } = require('./commands/alwaysoffline');
 const { autorecordingCommand, isAutorecordingEnabled, handleAutorecordingForMessage, handleAutorecordingForCommand } = require('./commands/autorecording');
                                                                                                                                                                                                                                                                                                                                                                                                                                         
@@ -220,8 +221,8 @@ async function handleMessages(sock, messageUpdate, printLog) {
 
         // Handle autoread functionality
         await handleAutoread(sock, message);
-
-        // Store message for antidelete feature
+       await handleAlwaysOfflineReadReceipt(sock, message);
+      
         if (message.message) {
             storeMessage(sock, message);
         }
@@ -1132,9 +1133,13 @@ case userMessage.startsWith('.dpdownload'):
                 break;
             case userMessage.startsWith('.autoread'):
                 await autoreadCommand(sock, chatId, message);
-                commandExecuted = true;
-                break;
-            case userMessage.startsWith('.pair'):
+                commandExecuted = true;           
+          break;
+           case userMessage.startsWith('.alwaysoffline'):
+    await alwaysOfflineCommand(sock, chatId, message);
+    commandExecuted = true;
+    break;
+          case userMessage.startsWith('.pair'):
     await pairCommand(sock, chatId, message);
     commandExecuted = true;
     break;
@@ -1146,10 +1151,7 @@ case userMessage.startsWith('.dpdownload'):
     await sulexhcalCommand(sock, chatId, message);
     break;
             }
-            case userMessage.startsWith('.alwaysoffline'):
-    await alwaysofflineCommand(sock, chatId, message);
-    commandExecuted = true;
-    break;
+
           case userMessage.startsWith('.heart'):
                 await handleHeart(sock, chatId, message);
                 break;
