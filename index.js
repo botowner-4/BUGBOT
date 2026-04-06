@@ -8,8 +8,9 @@ const express = require("express")
 const axios = require("axios")
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidDecode, jidNormalizedUser } = require("@whiskeysockets/baileys")
 const { handleMessages, handleGroupParticipantUpdate, handleStatus } = require('./main')
+const myfunc = require('./lib/myfunc')
+const { delay, smsg } = myfunc
 const PhoneNumber = require('awesome-phonenumber')
-const { delay, smsg } = require('./lib/myfunc')
 const store = require('./lib/lightweight_store')
 store.readFromFile()
 
