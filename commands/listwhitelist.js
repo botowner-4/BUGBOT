@@ -1,4 +1,4 @@
-const { getWhitelist } = require("../utils/helper");
+const { getWhitelist } = require("../Utils/helper");
 
 async function listWhitelistCommand(sock, chatId, message) {
     try {
