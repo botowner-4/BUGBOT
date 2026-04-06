@@ -1,4 +1,3 @@
-const require('./bugconfig')
 const require('./settings');
 const { handleMessages } = require('./main');
 const fs = require('fs');
