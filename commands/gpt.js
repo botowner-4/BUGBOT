@@ -52,7 +52,7 @@ async function gptCommand(sock, msg, args, extra) {
         console.error('Image AI error:', err);
       }
 
-      if (!reply) reply = '🧠 I can't fully analyze images yet, but it looks interesting.';
+      if (!reply) reply = "🧠 I can't fully analyze images yet, but it looks interesting.";
 
       return await sock.sendMessage(from, {
         text: `🖼 *Image Response*\n\n${reply}`
