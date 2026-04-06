@@ -26,7 +26,7 @@ async function gptCommand(sock, msg, args, extra) {
 
       let imageData;
       try {
-        imageData = await generateImage(cleanPrompt);
+        imageData = await APIs.generateImage(cleanPrompt);
       } catch (err) {
         console.error('Image generation failed:', err);
         return await sock.sendMessage(from, { text: '❌ Failed to generate image.' }, { quoted: msg });
@@ -46,13 +46,13 @@ async function gptCommand(sock, msg, args, extra) {
       let reply;
 
       try {
-        const res = await chatAI("User asked about an image: " + question);
+        const res = await APIs.chatAI("User asked about an image: " + question);
         reply = res.msg || res.result;
       } catch (err) {
         console.error('Image AI error:', err);
       }
 
-      if (!reply) reply = '🧠 I can’t fully analyze images yet, but it looks interesting.';
+      if (!reply) reply = '🧠 I can't fully analyze images yet, but it looks interesting.';
 
       return await sock.sendMessage(from, {
         text: `🖼 *Image Response*\n\n${reply}`
@@ -64,7 +64,7 @@ async function gptCommand(sock, msg, args, extra) {
     // =========================
     let reply;
     try {
-      const res = await chatAI(prompt);
+      const res = await APIs.chatAI(prompt);
       reply = res.msg || res.result;
     } catch (err) {
       console.error('AI chat error:', err);
