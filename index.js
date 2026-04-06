@@ -6,11 +6,32 @@ const pino = require('pino')
 const NodeCache = require('node-cache')
 const express = require("express")
 const axios = require("axios")
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidDecode, jidNormalizedUser } = require("@whiskeysockets/baileys")
+
+// ⭐ IMPORTANT: Import baileys dynamically
+let baileys = null;
+let makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidDecode, jidNormalizedUser;
+
+// Initialize baileys
+(async () => {
+  try {
+    baileys = await import('@whiskeysockets/baileys');
+    makeWASocket = baileys.default;
+    useMultiFileAuthState = baileys.useMultiFileAuthState;
+    DisconnectReason = baileys.DisconnectReason;
+    fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion;
+    makeCacheableSignalKeyStore = baileys.makeCacheableSignalKeyStore;
+    jidDecode = baileys.jidDecode;
+    jidNormalizedUser = baileys.jidNormalizedUser;
+    console.log('✅ Baileys initialized successfully');
+  } catch (err) {
+    console.error('❌ Failed to load baileys:', err);
+    process.exit(1);
+  }
+})();
+
 const { handleMessages, handleGroupParticipantUpdate, handleStatus } = require('./main')
-const myfunc = require('./lib/myfunc')
-const { delay, smsg } = myfunc
 const PhoneNumber = require('awesome-phonenumber')
+const { delay, smsg } = require('./lib/myfunc')
 const store = require('./lib/lightweight_store')
 store.readFromFile()
 
@@ -68,6 +89,12 @@ app.listen(PORT, () => console.log(`🌐 Web service listening on port ${PORT}`)
 // ===== Multi-Number Bot Launcher =====
 async function startBotForNumber(phoneNumberRaw, pairingCode = true) {
     try {
+        // Wait for baileys to be loaded
+        if (!makeWASocket) {
+            console.log(chalk.yellow('⏳ Waiting for baileys to initialize...'));
+            await new Promise(r => setTimeout(r, 3000));
+        }
+
         const { version } = await fetchLatestBaileysVersion()
 
         // Clean number: digits only
