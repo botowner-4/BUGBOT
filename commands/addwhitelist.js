@@ -1,29 +1,31 @@
 // commands/addwhitelist.js
 const fs = require("fs");
 const path = require("path");
-const settings = require("../settings");
 
 const WHITELIST_FILE = path.join(__dirname, "../whitelist.json");
 
 async function addWhitelistCommand(sock, chatId, message) {
     try {
         // Extract the number from the user message
-        // Expected format: ".addwhitelist 2547xxxxxxx"
+        // Expected format: ".addwhitelist +2547xxxxxxx" or ".addwhitelist 2547xxxxxxx" etc.
         const parts = message.body.trim().split(" ");
         if (parts.length < 2) {
             await sock.sendMessage(
                 chatId,
-                { text: "❌ Please provide a number to whitelist.\nExample: `.addwhitelist 2547xxxxxxx`" },
+                { text: "❌ Please provide a number to whitelist.\nExample: `.addwhitelist 2547xxxxxxx` or `.addwhitelist +2547xxxxxxx`" },
                 { quoted: message }
             );
             return;
         }
 
+        // Normalize number: remove spaces, dashes, parentheses, leading +00 etc.
         let number = parts[1].replace(/\D/g, "");
-        if (!number.startsWith("254")) {
+        if (number.startsWith("00")) number = number.slice(2); // 00 prefix → remove
+        if (number.startsWith("0") && number.length >= 10) number = "254" + number.slice(1); // optional: Kenyan local to intl
+        if (number.length < 6 || number.length > 15) {
             await sock.sendMessage(
                 chatId,
-                { text: "❌ Number must start with country code 254." },
+                { text: "❌ Invalid number. Please provide a valid international number." },
                 { quoted: message }
             );
             return;
