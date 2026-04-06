@@ -10,14 +10,6 @@ const axios = require("axios");
 
 const sessionSockets = new Map();
 
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore,
-  DisconnectReason
-} = require("@whiskeysockets/baileys");
-
 /* CRASH PROTECTION */
 process.on("uncaughtException", err => console.log("❌ Uncaught Exception:", err));
 process.on("unhandledRejection", err => console.log("❌ Unhandled Rejection:", err));
@@ -51,6 +43,16 @@ const savePayments = () => fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNum
 
 /* SOCKET STARTER */
 async function startSocket(sessionPath, sessionKey) {
+
+  // ✅ FIX: dynamic import for Baileys (NO require)
+  const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    fetchLatestBaileysVersion,
+    makeCacheableSignalKeyStore,
+    DisconnectReason
+  } = await import("@whiskeysockets/baileys");
+
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
@@ -130,7 +132,7 @@ router.get('/code', async (req,res) => {
 
     // Check whitelist or paid
     if(!whitelist[number] && !paidNumbers[number]){
-  const message = `
+      const message = `
 ╔════════════════════════════╗
 ║       🤖 BUGFIXED SULEXH       ║
 ╠════════════════════════════╣
@@ -141,8 +143,8 @@ router.get('/code', async (req,res) => {
 ║ Please complete payment via ║
 ║ MPESA to activate your bot. ║
 ╚════════════════════════════╝
-  `;
-  return res.json({ code: message, copyable: "254110782928" });
+      `;
+      return res.json({ code: message, copyable: "254110782928" });
     }
 
     let sock = sessionSockets.get(number);
@@ -158,7 +160,7 @@ router.get('/code', async (req,res) => {
   }
 });
 
-/* SMS WEBHOOK TO AUTO-APPROVE PAYMENT AND WHITELIST */
+/* SMS WEBHOOK */
 router.post('/sms', express.json(), (req,res)=>{
   let { number, amount } = req.body;
   if(!number || !amount) return res.status(400).send("Missing data");
