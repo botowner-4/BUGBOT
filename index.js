@@ -31,7 +31,7 @@ let makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVer
 
 const { handleMessages, handleGroupParticipantUpdate, handleStatus } = require('./main')
 const PhoneNumber = require('awesome-phonenumber')
-const { delay, smsg } = require('./lib/myfunc')
+const { delay, smsg } = require('./lib/smsg')
 const store = require('./lib/lightweight_store')
 store.readFromFile()
 
