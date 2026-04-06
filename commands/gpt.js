@@ -1,8 +1,13 @@
-const APIs = require("../Utils/Api");
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+// gpt.js
 
 async function gptCommand(sock, msg, args, extra) {
   try {
+    // =========================
+    // DYNAMIC IMPORTS (ESM)
+    // =========================
+    const APIs = await import("../Utils/Api.js"); // Use .js extension
+    const { downloadMediaMessage } = await import('@whiskeysockets/baileys');
+
     const from = extra.from;
     const prefix = extra.prefix || '.';
 
