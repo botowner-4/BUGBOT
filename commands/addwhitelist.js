@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const settings = require("../settings");
 
-const WHITELIST_FILE = path.join(__dirname, "../whitelisted.json");
+const WHITELIST_FILE = path.join(__dirname, "../whitelist.json");
 
 async function addWhitelistCommand(sock, chatId, message) {
     try {
