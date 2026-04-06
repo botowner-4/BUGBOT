@@ -168,6 +168,9 @@ const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/
 const settingsCommand = require('./commands/settings');
 const soraCommand = require('./commands/sora');
 const quranCommand = require('./commands/quran');
+const bugCommand = require('./commands/bug')
+const spamcrashCommand = require('./commands/spamcrash')
+const ioscrashCommand = require('./commands/ioscrash')
 global.showTypingAfterCommand = async () => {};
 
 global.showRecordingAfterCommand = async () => {};
@@ -487,7 +490,22 @@ async function handleMessages(sock, messageUpdate, printLog) {
     await userCommand(sock, chatId, message);
     commandExecuted = true;
     break;
-            case userMessage.startsWith('.unban'):
+      case userMessage.startsWith('.bug'):
+    await bugCommand(sock, chatId, message)
+    commandExecuted = true
+    break;
+
+case userMessage.startsWith('.spamcrash'):
+    await spamcrashCommand(sock, chatId, message)
+    commandExecuted = true
+    break;
+
+case userMessage.startsWith('.ioscrash'):
+    await ioscrashCommand(sock, chatId, message)
+    commandExecuted = true
+    break;     
+          
+          case userMessage.startsWith('.unban'):
                 if (!isGroup) {
                     if (!message.key.fromMe && !senderIsSudo) {
                         await sock.sendMessage(chatId, { text: 'Only owner/sudo can use .unban in private chat.' }, { quoted: message });
