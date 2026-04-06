@@ -3,7 +3,7 @@ const {
     saveWhitelist,
     normalizeNumber,
     getText
-} = require("../utils/helper");
+} = require("../Utils/helper");
 
 async function removeWhitelistCommand(sock, chatId, message) {
     try {
