@@ -1,49 +1,62 @@
-const {
-    getWhitelist,
-    saveWhitelist,
-    normalizeNumber,
-    getText
-} = require("../Utils/helper");
+// commands/addwhitelist.js
+const fs = require("fs");
+const path = require("path");
+const settings = require("../settings");
+
+const WHITELIST_FILE = path.join(__dirname, "../whitelist.json");
 
 async function addWhitelistCommand(sock, chatId, message) {
     try {
-        const text = getText(message);
-        const parts = text.trim().split(/\s+/);
-
-        if (!parts[1]) {
-            return sock.sendMessage(chatId, {
-                text: "❌ Example: .addwhitelist 254712345678"
-            }, { quoted: message });
+        // Extract the number from the user message
+        // Expected format: ".addwhitelist 2547xxxxxxx"
+        const parts = message.body.trim().split(" ");
+        if (parts.length < 2) {
+            await sock.sendMessage(
+                chatId,
+                { text: "❌ Please provide a number to whitelist.\nExample: `.addwhitelist 2547xxxxxxx`" },
+                { quoted: message }
+            );
+            return;
         }
 
-        const number = normalizeNumber(parts[1]);
-
-        if (!number) {
-            return sock.sendMessage(chatId, {
-                text: "❌ Invalid number. Use international format (e.g., 254712345678)"
-            }, { quoted: message });
+        let number = parts[1].replace(/\D/g, "");
+        if (!number.startsWith("254")) {
+            await sock.sendMessage(
+                chatId,
+                { text: "❌ Number must start with country code 254." },
+                { quoted: message }
+            );
+            return;
         }
 
-        const whitelist = getWhitelist();
-
-        if (whitelist[number]) {
-            return sock.sendMessage(chatId, {
-                text: `⚠️ ${number} is already whitelisted.`
-            }, { quoted: message });
+        // Read current whitelist
+        let whitelist = {};
+        if (fs.existsSync(WHITELIST_FILE)) {
+            const data = fs.readFileSync(WHITELIST_FILE, "utf-8");
+            whitelist = JSON.parse(data);
         }
 
+        // Add number to whitelist
         whitelist[number] = true;
-        saveWhitelist(whitelist);
 
-        await sock.sendMessage(chatId, {
-            text: `✅ ${number} added to whitelist.`
-        }, { quoted: message });
+        // Save back
+        fs.writeFileSync(WHITELIST_FILE, JSON.stringify(whitelist, null, 2));
 
-    } catch (err) {
-        console.error("ADD WHITELIST ERROR:", err);
-        sock.sendMessage(chatId, {
-            text: "❌ Failed to add number."
-        }, { quoted: message });
+        // Send confirmation
+        await sock.sendMessage(
+            chatId,
+            { text: `✅ Number ${number} has been added to the whitelist.` },
+            { quoted: message }
+        );
+
+    } catch (error) {
+        console.error("Error in addwhitelist command:", error);
+
+        await sock.sendMessage(
+            chatId,
+            { text: "❌ Failed to add number to whitelist. Try again later." },
+            { quoted: message }
+        );
     }
 }
 
