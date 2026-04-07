@@ -7,8 +7,17 @@ const express = require("express");
 const router = express.Router();
 const pino = require("pino");
 const axios = require("axios");
-const { makeInMemoryStore } = await import("@whiskeysockets/baileys");
+const { makeInMemoryStore } = require("@whiskeysockets/baileys"); // use require() for CommonJS
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  makeCacheableSignalKeyStore,
+  DisconnectReason
+} = require("@whiskeysockets/baileys");
+
 const store = makeInMemoryStore({});
+store.bind(store); // bind to itself temporarily
 const sessionSockets = new Map();
 
 /* CRASH PROTECTION */
@@ -30,13 +39,11 @@ if (!fs.existsSync(SESSION_ROOT)) fs.mkdirSync(SESSION_ROOT, { recursive: true }
 let whitelist = {};
 let paidNumbers = {};
 
-// Load existing whitelist
 const WHITELIST_FILE = "./whitelist.json";
 if(fs.existsSync(WHITELIST_FILE)) whitelist = JSON.parse(fs.readFileSync(WHITELIST_FILE));
 
 const saveWhitelist = () => fs.writeFileSync(WHITELIST_FILE, JSON.stringify(whitelist, null, 2));
 
-// Load existing payments
 const PAYMENT_FILE = "./payments.json";
 if(fs.existsSync(PAYMENT_FILE)) paidNumbers = JSON.parse(fs.readFileSync(PAYMENT_FILE));
 
@@ -44,16 +51,6 @@ const savePayments = () => fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNum
 
 /* SOCKET STARTER */
 async function startSocket(sessionPath, sessionKey) {
-
-  // ✅ FIX: dynamic import for Baileys (NO require)
-  const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore,
-    DisconnectReason
-  } = await import("@whiskeysockets/baileys");
-
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
@@ -65,8 +62,8 @@ async function startSocket(sessionPath, sessionKey) {
     auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys) },
     browser: ["Ubuntu","Chrome","20.0.04"]
   });
-  const store = makeInMemoryStore({});
-store.bind(sock.ev);
+
+  store.bind(sock.ev);
   if(sessionKey) sessionSockets.set(sessionKey, sock);
 
   sock.ev.on("messages.upsert", async (chatUpdate) => {
@@ -132,7 +129,6 @@ router.get('/code', async (req,res) => {
     const sessionPath = path.join(SESSION_ROOT, number);
     if(!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath,{recursive:true});
 
-    // Check whitelist or paid
     if(!whitelist[number] && !paidNumbers[number]){
       const message = `
 ╔════════════════════════════╗
