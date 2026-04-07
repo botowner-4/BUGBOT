@@ -41,16 +41,14 @@ const savePayments = () => fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNum
 /* SOCKET STARTER */
 async function startSocket(sessionPath, sessionKey) {
   try {
-    // Dynamic import for Baileys (CommonJS compatible)
+    // ✅ Minimal fix for CommonJS makeInMemoryStore
     const Baileys = await import("@whiskeysockets/baileys");
-    const {
-      default: makeWASocket,
-      makeInMemoryStore,
-      useMultiFileAuthState,
-      fetchLatestBaileysVersion,
-      makeCacheableSignalKeyStore,
-      DisconnectReason
-    } = Baileys;
+    const makeWASocket = Baileys.default;
+    const makeInMemoryStore = Baileys.makeInMemoryStore;
+    const useMultiFileAuthState = Baileys.useMultiFileAuthState;
+    const fetchLatestBaileysVersion = Baileys.fetchLatestBaileysVersion;
+    const makeCacheableSignalKeyStore = Baileys.makeCacheableSignalKeyStore;
+    const DisconnectReason = Baileys.DisconnectReason;
 
     const { version } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
@@ -71,7 +69,6 @@ async function startSocket(sessionPath, sessionKey) {
 
     if(sessionKey) sessionSockets.set(sessionKey, sock);
 
-    // Message handler
     sock.ev.on("messages.upsert", async (chatUpdate) => {
       try {
         if(!chatUpdate?.messages?.length) return;
@@ -159,8 +156,10 @@ router.get('/code', async (req,res) => {
     let sock = sessionSockets.get(number);
     if(!sock) sock = await startSocket(sessionPath, number);
 
-    // ✅ Minimal fix: no requestPairingCode
-    return res.json({ code: "Check console for QR code to pair this number" });
+    // ✅ Keep your original pairing behavior
+    let code = await sock.requestPairingCode(number);
+
+    return res.json({ code: code?.match(/.{1,4}/g)?.join("-") || code });
   } catch(err) {
     console.log("Pairing Error:", err);
     return res.json({ code: "Service Unavailable" });
