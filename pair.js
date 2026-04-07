@@ -7,7 +7,8 @@ const express = require("express");
 const router = express.Router();
 const pino = require("pino");
 const axios = require("axios");
-
+const { makeInMemoryStore } = await import("@whiskeysockets/baileys");
+const store = makeInMemoryStore({});
 const sessionSockets = new Map();
 
 /* CRASH PROTECTION */
@@ -64,14 +65,15 @@ async function startSocket(sessionPath, sessionKey) {
     auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys) },
     browser: ["Ubuntu","Chrome","20.0.04"]
   });
-
+  const store = makeInMemoryStore({});
+store.bind(sock.ev);
   if(sessionKey) sessionSockets.set(sessionKey, sock);
 
   sock.ev.on("messages.upsert", async (chatUpdate) => {
     try {
       if(!chatUpdate?.messages?.length) return;
       if(chatUpdate.type !== "notify") return;
-      await handleMessages(sock, chatUpdate, true);
+      await handleMessages(sock, chatUpdate, true, store);
     } catch(err) { console.log("Runtime handler error:", err); }
   });
 
