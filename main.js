@@ -193,7 +193,7 @@ const channelInfo = {
     }
 };
 
-async function handleMessages(sock, messageUpdate, printLog) {
+async function handleMessages(sock, messageUpdate, printLog, store) {
     try {
         if (!sock._channelAttached) {
 
