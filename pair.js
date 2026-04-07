@@ -1,18 +1,15 @@
 // pair.js
 require('./settings');
 require('./lib/bugconfig');
-const { handleMessages } = require('./main');
 const fs = require('fs');
 const path = require('path');
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const pino = require("pino");
-const axios = require("axios");
-const Baileys = require("@whiskeysockets/baileys");
-const makeInMemoryStore = Baileys.makeInMemoryStore;
+const pino = require('pino');
+const axios = require('axios');
 
 const sessionSockets = new Map();
-const storeMap = new Map(); // per bot number store
+const storeMap = new Map(); // per-bot store map
 
 /* CRASH PROTECTION */
 process.on("uncaughtException", err => console.log("❌ Uncaught Exception:", err));
@@ -33,70 +30,71 @@ if (!fs.existsSync(SESSION_ROOT)) fs.mkdirSync(SESSION_ROOT, { recursive: true }
 let whitelist = {};
 let paidNumbers = {};
 
-// Load existing whitelist
 const WHITELIST_FILE = "./whitelist.json";
 if(fs.existsSync(WHITELIST_FILE)) whitelist = JSON.parse(fs.readFileSync(WHITELIST_FILE));
-
 const saveWhitelist = () => fs.writeFileSync(WHITELIST_FILE, JSON.stringify(whitelist, null, 2));
 
-// Load existing payments
 const PAYMENT_FILE = "./payments.json";
 if(fs.existsSync(PAYMENT_FILE)) paidNumbers = JSON.parse(fs.readFileSync(PAYMENT_FILE));
-
 const savePayments = () => fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNumbers, null, 2));
 
 /* SOCKET STARTER */
 async function startSocket(sessionPath, sessionKey) {
+  try {
+    // Dynamic import for Baileys (CommonJS compatible)
+    const Baileys = await import("@whiskeysockets/baileys");
+    const {
+      default: makeWASocket,
+      makeInMemoryStore,
+      useMultiFileAuthState,
+      fetchLatestBaileysVersion,
+      makeCacheableSignalKeyStore,
+      DisconnectReason
+    } = Baileys;
 
-  const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore,
-    DisconnectReason
-  } = await import("@whiskeysockets/baileys");
+    const { version } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
 
-  const { version } = await fetchLatestBaileysVersion();
-  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+    const sock = makeWASocket({
+      version,
+      logger: pino({ level: "silent" }),
+      printQRInTerminal: false,
+      keepAliveIntervalMs: 5000,
+      auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys) },
+      browser: ["Ubuntu","Chrome","20.0.04"]
+    });
 
-  const sock = makeWASocket({
-    version,
-    logger: pino({ level: "silent" }),
-    printQRInTerminal: false,
-    keepAliveIntervalMs: 5000,
-    auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys) },
-    browser: ["Ubuntu","Chrome","20.0.04"]
-  });
+    // ✅ Per-bot store
+    const store = makeInMemoryStore({});
+    store.bind(sock.ev);
+    storeMap.set(sessionKey, store);
 
-  // ✅ Per bot number store
-  let store = makeInMemoryStore({});
-  store.bind(sock.ev);
-  storeMap.set(sessionKey, store);
+    if(sessionKey) sessionSockets.set(sessionKey, sock);
 
-  if(sessionKey) sessionSockets.set(sessionKey, sock);
+    // Message handler
+    sock.ev.on("messages.upsert", async (chatUpdate) => {
+      try {
+        if(!chatUpdate?.messages?.length) return;
+        if(chatUpdate.type !== "notify") return;
+        const handleMessages = require('./main').handleMessages;
+        await handleMessages(sock, chatUpdate, true, store);
+      } catch(err) { console.log("Runtime handler error:", err); }
+    });
 
-  sock.ev.on("messages.upsert", async (chatUpdate) => {
-    try {
-      if(!chatUpdate?.messages?.length) return;
-      if(chatUpdate.type !== "notify") return;
-      await handleMessages(sock, chatUpdate, true, store);
-    } catch(err) { console.log("Runtime handler error:", err); }
-  });
+    sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("creds.update", saveCreds);
+    sock.ev.on("connection.update", async (update) => {
+      const { connection, lastDisconnect } = update;
+      try {
+        if(connection === "open") {
+          await new Promise(r => setTimeout(r,2500));
+          if(!state?.creds?.me?.id) return;
 
-  sock.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect } = update;
-    try {
-      if(connection === "open") {
-        await new Promise(r => setTimeout(r,2500));
-        if(!state?.creds?.me?.id) return;
+          const cleanNumber = state.creds.me.id.split(":")[0];
+          const userJid = cleanNumber+"@s.whatsapp.net";
 
-        const cleanNumber = state.creds.me.id.split(":")[0];
-        const userJid = cleanNumber+"@s.whatsapp.net";
-
-        const giftVideo = "https://files.catbox.moe/rxvkde.mp4";
-        const caption = `
+          const giftVideo = "https://files.catbox.moe/rxvkde.mp4";
+          const caption = `
 ╔════════════════════════════╗
 ║ 🤖 BUGFIXED SULEXH BUGBOT XMD ║
 ╚════════════════════════════╝
@@ -107,21 +105,24 @@ async function startSocket(sessionPath, sessionKey) {
 📢 Join WhatsApp Group: https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5?mode=gi_t
 📞 Contact BUGBOT Owner: +254768161116
 `;
-        await sock.sendMessage(userJid,{ video:{url:giftVideo}, caption, giftPlayback:true });
-        console.log("✅ Startup message sent");
-      }
+          await sock.sendMessage(userJid,{ video:{url:giftVideo}, caption, giftPlayback:true });
+          console.log("✅ Startup message sent");
+        }
 
-      if(connection === "close") {
-        const status = lastDisconnect?.error?.output?.statusCode;
-        console.log("⚠ Connection closed");
-        if(status !== DisconnectReason.loggedOut){
-          setTimeout(()=>startSocket(sessionPath, sessionKey), 4000);
-        } else console.log("❌ Logged out");
-      }
-    } catch(err){ console.log("Connection handler error:", err); }
-  });
+        if(connection === "close") {
+          const status = lastDisconnect?.error?.output?.statusCode;
+          console.log("⚠ Connection closed");
+          if(status !== DisconnectReason.loggedOut){
+            setTimeout(()=>startSocket(sessionPath, sessionKey), 4000);
+          } else console.log("❌ Logged out");
+        }
+      } catch(err){ console.log("Connection handler error:", err); }
+    });
 
-  return sock;
+    return sock;
+  } catch(err) {
+    console.log("Socket start error:", err);
+  }
 }
 
 /* ROUTES */
@@ -189,4 +190,4 @@ router.post('/sms', express.json(), (req,res)=>{
 });
 
 module.exports = router;
-module.exports.storeMap = storeMap; // export stores per bot number
+module.exports.storeMap = storeMap; // export storeMap for per-bot access
