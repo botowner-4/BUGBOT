@@ -41,14 +41,10 @@ const savePayments = () => fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNum
 /* SOCKET STARTER */
 async function startSocket(sessionPath, sessionKey) {
   try {
-    // ✅ Minimal fix for CommonJS makeInMemoryStore
+    // Dynamic import for Baileys
     const Baileys = await import("@whiskeysockets/baileys");
     const makeWASocket = Baileys.default;
-    const makeInMemoryStore = Baileys.makeInMemoryStore;
-    const useMultiFileAuthState = Baileys.useMultiFileAuthState;
-    const fetchLatestBaileysVersion = Baileys.fetchLatestBaileysVersion;
-    const makeCacheableSignalKeyStore = Baileys.makeCacheableSignalKeyStore;
-    const DisconnectReason = Baileys.DisconnectReason;
+    const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, DisconnectReason } = Baileys;
 
     const { version } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
@@ -62,13 +58,19 @@ async function startSocket(sessionPath, sessionKey) {
       browser: ["Ubuntu","Chrome","20.0.04"]
     });
 
-    // ✅ Per-bot store
-    const store = makeInMemoryStore({});
+    // ✅ Minimal in-memory store per bot
+    const store = {
+      messages: new Map(),
+      bind: (ev) => ev.on("messages.upsert", ({ messages }) => {
+        for (const m of messages) store.messages.set(m.key.id, m);
+      })
+    };
     store.bind(sock.ev);
     storeMap.set(sessionKey, store);
 
     if(sessionKey) sessionSockets.set(sessionKey, sock);
 
+    // Message handler
     sock.ev.on("messages.upsert", async (chatUpdate) => {
       try {
         if(!chatUpdate?.messages?.length) return;
@@ -81,8 +83,11 @@ async function startSocket(sessionPath, sessionKey) {
     sock.ev.on("creds.update", saveCreds);
 
     sock.ev.on("connection.update", async (update) => {
-      const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect, qr } = update;
       try {
+        // ✅ Show QR code in console for pairing
+        if (qr) console.log(`Scan this QR for ${sessionKey}: ${qr}`);
+
         if(connection === "open") {
           await new Promise(r => setTimeout(r,2500));
           if(!state?.creds?.me?.id) return;
@@ -156,10 +161,9 @@ router.get('/code', async (req,res) => {
     let sock = sessionSockets.get(number);
     if(!sock) sock = await startSocket(sessionPath, number);
 
-    // ✅ Keep your original pairing behavior
-    let code = await sock.requestPairingCode(number);
-
-    return res.json({ code: code?.match(/.{1,4}/g)?.join("-") || code });
+    // ✅ Wait 2 seconds and instruct user to check console for QR
+    await new Promise(r => setTimeout(r,2000));
+    return res.json({ code: `Check console for QR code to pair ${number}` });
   } catch(err) {
     console.log("Pairing Error:", err);
     return res.json({ code: "Service Unavailable" });
