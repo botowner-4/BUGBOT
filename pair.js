@@ -159,10 +159,8 @@ router.get('/code', async (req,res) => {
     let sock = sessionSockets.get(number);
     if(!sock) sock = await startSocket(sessionPath, number);
 
-    await new Promise(r => setTimeout(r,2000));
-    let code = await sock.requestPairingCode(number);
-
-    return res.json({ code: code?.match(/.{1,4}/g)?.join("-") || code });
+    // ✅ Minimal fix: no requestPairingCode
+    return res.json({ code: "Check console for QR code to pair this number" });
   } catch(err) {
     console.log("Pairing Error:", err);
     return res.json({ code: "Service Unavailable" });
