@@ -7,7 +7,8 @@ const express = require("express");
 const router = express.Router();
 const pino = require("pino");
 const axios = require("axios");
-const { makeInMemoryStore } = require("@whiskeysockets/baileys"); // use require() for CommonJS
+const Baileys = require("@whiskeysockets/baileys");
+const makeInMemoryStore = Baileys.makeInMemoryStore;
 const {
   default: makeWASocket,
   useMultiFileAuthState,
