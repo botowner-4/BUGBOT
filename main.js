@@ -1,7 +1,7 @@
 // Fix for ENOSPC / temp overflow in hosted panels
 const fs = require('fs');
 const path = require('path');
-
+const { makeInMemoryStore } = require('@whiskeysockets/baileys');
 // Redirect temp storage away from system /tmp
 const customTemp = path.join(process.cwd(), 'temp');
 if (!fs.existsSync(customTemp)) fs.mkdirSync(customTemp, { recursive: true });
