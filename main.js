@@ -628,7 +628,10 @@ case userMessage === '.v': {
             await listWhitelist(sock, chatId, message);
             break;
     
-
+         case userMessage.startsWith('.addwhitelist'):
+    await addWhitelistCommand(sock, chatId, message);  // ✅ CORRECT
+    commandExecuted = true;
+    break;
   
        
    
@@ -819,10 +822,7 @@ case userMessage === '.v': {
             case userMessage === '.alive':
                 await aliveCommand(sock, chatId, message);
                 break;
-           case userMessage === '.addwhitelist':
-    await addWhitelistCommand(sock, chatId, message);  // ✅ CORRECT
-    commandExecuted = true;
-    break;
+           
           case userMessage.startsWith('.mention '):
                 {
                     const args = userMessage.split(' ').slice(1).join(' ');
