@@ -224,6 +224,15 @@ async function handleMessages(sock, messageUpdate, printLog, store) {
 
         const message = messages[0];
         if (!message?.message) return;
+               // ✅ VERY IMPORTANT (stop loop)
+if (message.key.fromMe) return;
+
+// ✅ THEN serialize
+const serialized = smsg(sock, message, store);
+
+// (optional logs)
+console.log(serialized.body);
+console.log(serialized.isGroup);
 
         // Handle autoread functionality
         await handleAutoread(sock, message);
