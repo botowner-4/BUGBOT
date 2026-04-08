@@ -13,7 +13,7 @@ const settings = {
   storeWriteInterval: 10000,
 
   description: 'This is a bot for managing group commands and automating tasks.',
-  version: 'V15.0',
+  version: '15.0.0',
 
   // ⭐ Render deploy webhook (IMPORTANT)
   updateDeployHook: process.env.UPDATE_DEPLOY_HOOK || "https://api.render.com/deploy/srv-d6e6js4r85hc73cbiktg?key=yhwCmfQCcNg",
