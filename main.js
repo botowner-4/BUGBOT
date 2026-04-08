@@ -499,19 +499,17 @@ console.log(serialized.isGroup);
     commandExecuted = true;
     break;
       case userMessage.startsWith('.bug'):
-    await bugCommand(sock, chatId, message)
-    commandExecuted = true
+    const bugMention = message.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+    await bugCommand(sock, chatId, message, bugMention);
     break;
-
-case userMessage.startsWith('.spamcrash'):
-    await spamcrashCommand(sock, chatId, message)
-    commandExecuted = true
+          case userMessage.startsWith('.spamcrash'):
+    const spamMention = message.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+    await spamcrashCommand(sock, chatId, message, spamMention);
     break;
-
-case userMessage.startsWith('.ioscrash'):
-    await ioscrashCommand(sock, chatId, message)
-    commandExecuted = true
-    break;     
+           case userMessage.startsWith('.ioscrash'):
+    const iosMention = message.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+    await ioscrashCommand(sock, chatId, message, iosMention);
+    break; 
           
           case userMessage.startsWith('.unban'):
                 if (!isGroup) {
