@@ -244,11 +244,7 @@ async function handleMessages(sock, messageUpdate, printLog, store) {
         const isGroup = chatId.endsWith('@g.us');
         const senderIsSudo = await isSudo(senderId);
         const senderIsOwnerOrSudo = await isOwnerOrSudo(senderId, sock, chatId);
-       // Use it like this:
-const serialized = smsg(sock, message, store);
-console.log(serialized.body);    // Get message text
-console.log(serialized.isGroup); // Check if group
-await serialized.reply('Hello'); // Quick reply
+
         // Handle button responses
         if (message.message?.buttonsResponseMessage) {
             const buttonId = message.message.buttonsResponseMessage.selectedButtonId;
