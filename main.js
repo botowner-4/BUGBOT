@@ -1393,7 +1393,7 @@ case userMessage.startsWith('.dpdownload'):
             });
         }
 
-        if (userMessage.startsWith('.')) {
+        if (!userMessage.startsWith('.') && !isFromMe) {
             // After command is processed successfully
             await addCommandReaction(sock, message);
         }
