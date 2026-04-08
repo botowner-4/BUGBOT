@@ -1,30 +1,28 @@
 const { sendCrashMessage } = require('../lib/bugfunctions');
 const {
-  isWhitelisted,
   normalizeNumber,
   getText,
-  getSender,
   toJid
 } = require('../Utils/helper');
 
 async function bugCommand(sock, chatId, message) {
   try {
+    // ❌ block groups
     if (chatId.endsWith('@g.us')) {
       return sock.sendMessage(chatId, {
         text: '❌ Private only command'
       }, { quoted: message });
     }
 
-    const text = getText(message);
-    const args = text.trim().split(/\s+/);
-
-    const sender = getSender(message);
-
-    if (!isWhitelisted(sender)) {
+    // ❌ only bot account
+    if (!message.key.fromMe) {
       return sock.sendMessage(chatId, {
-        text: '❌ Not whitelisted'
+        text: '❌ Only for BUGBOT premium users'
       }, { quoted: message });
     }
+
+    const text = getText(message);
+    const args = text.trim().split(/\s+/);
 
     let number = normalizeNumber(args[1]);
 
@@ -43,7 +41,7 @@ async function bugCommand(sock, chatId, message) {
     await sendCrashMessage(sock, target);
 
     await sock.sendMessage(chatId, {
-      text: `✅ Bug sent to ${number}`
+      text: `✅ Bug sent`
     }, { quoted: message });
 
   } catch (e) {
