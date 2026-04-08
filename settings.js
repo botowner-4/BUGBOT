@@ -1,7 +1,7 @@
 const settings = {
-  packname: process.env.PACKNAME || 'Bugfixed sulexh xmd',
+  packname: process.env.PACKNAME || 'WHATSAPP CRASHER V15',
   author: process.env.AUTHOR || '‎',
-  botName: process.env.BOT_NAME || 'bugfixed xmd Bot',
+  botName: process.env.BOT_NAME || 'BUGBOT XMD',
   botOwner: process.env.BOT_OWNER || 'Bugfixed',
   ownerNumber: process.env.OWNER_NUMBER || '254768161116',
 
@@ -13,13 +13,13 @@ const settings = {
   storeWriteInterval: 10000,
 
   description: 'This is a bot for managing group commands and automating tasks.',
-  version: '3.0.5',
+  version: 'V15.0',
 
   // ⭐ Render deploy webhook (IMPORTANT)
   updateDeployHook: process.env.UPDATE_DEPLOY_HOOK || "https://api.render.com/deploy/srv-d6e6js4r85hc73cbiktg?key=yhwCmfQCcNg",
 
   updateZipUrl:
-    'https://github.com/botowner4/BUGBOT/archive/refs/heads/main.zip',
+    'https://github.com/botowner-4/BUGBOT/archive/refs/heads/main.zip',
 };
 
 module.exports = settings;
