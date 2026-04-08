@@ -5,7 +5,7 @@ const {
   getText,
   getSender,
   toJid
-} = require('../utils/helper');
+} = require('../Utils/helper');
 
 async function bugCommand(sock, chatId, message) {
   try {
