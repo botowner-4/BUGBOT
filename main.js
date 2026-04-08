@@ -224,7 +224,7 @@ async function handleMessages(sock, messageUpdate, printLog, store) {
         const message = messages[0];
         if (!message?.message) return;
                // ✅ VERY IMPORTANT (stop loop)
-if (message.key.fromMe) return;
+const isFromMe = message.key.fromMe;
 
 // ✅ THEN serialize
 const serialized = smsg(sock, message, store);
@@ -292,7 +292,7 @@ console.log(serialized.isGroup);
             '';
 
         // Only log command usage
-        if (userMessage.startsWith('.')) {
+      if (!userMessage.startsWith('.') && !isFromMe) { {
             console.log(`📝 Command used in ${isGroup ? 'group' : 'private'}: ${userMessage}`);
         }
         // Read bot mode once; don't early-return so moderation can still run in private mode
