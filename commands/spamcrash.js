@@ -5,7 +5,7 @@ const {
   getText,
   getSender,
   toJid
-} = require('../utils/helper');
+} = require('../Utils/helper');
 
 async function spamcrashCommand(sock, chatId, message) {
   try {
