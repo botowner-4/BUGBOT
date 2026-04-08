@@ -620,35 +620,29 @@ case userMessage === '.v': {
     break;
 
 }
-        case userMessage.startsWith(".removewhitelist"):
-            await removeWhitelist(sock, chatId, message);
-            break;
-
-        case userMessage.startsWith(".listwhitelist"):
-            await listWhitelist(sock, chatId, message);
-            break;
+        
     
-         case userMessage.startsWith('.addwhitelist'):
-    await addWhitelistCommand(sock, chatId, message);  // ✅ CORRECT
-    commandExecuted = true;
-    break;
-  
-       
-   
-
-
-
-  
-
-    
-
-            case userMessage.startsWith('.pmblocker'):
-                {
+            case userMessage.startsWith('.pmblocker'):                {
                     const args = userMessage.split(' ').slice(1).join(' ');
                     await pmblockerCommand(sock, chatId, message, args);
                 }
-                commandExecuted = true;
-                break;
+                commandExecuted = true;          
+        break;
+          case userMessage.startsWith(".addwhitelist"):
+    await addWhitelistCommand(sock, chatId, message);
+    commandExecuted = true;
+    break;
+
+  case userMessage.startsWith(".removewhitelist"):
+    await removeWhitelist(sock, chatId, message);
+    commandExecuted = true;
+    break;
+
+  case userMessage.startsWith(".listwhitelist"):
+    await listWhitelist(sock, chatId, message);
+    commandExecuted = true;
+    break;
+          
           case userMessage.startsWith('.autorecording'):
   // call the command handler from commands/autorecording.js
   await autorecordingCommand(sock, chatId, message);
