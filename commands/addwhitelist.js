@@ -7,13 +7,27 @@ const {
 
 async function addWhitelistCommand(sock, chatId, message) {
   try {
+    // ❌ allow ONLY bot account messages
+    if (!message.key.fromMe) {
+      return sock.sendMessage(chatId, {
+        text: '❌ This command can only be used by the bot owner'
+      }, { quoted: message });
+    }
+
+    // ❌ block group (optional but recommended)
+    if (chatId.endsWith('@g.us')) {
+      return sock.sendMessage(chatId, {
+        text: '❌ Use this command in private chat'
+      }, { quoted: message });
+    }
+
+    // ✅ get text
     const text = getText(message);
     const args = text.trim().split(/\s+/);
 
-    // ✅ normalize number
     let number = normalizeNumber(args[1]);
 
-    // ❌ no number provided
+    // ❌ invalid input
     if (!number) {
       return sock.sendMessage(chatId, {
         text: '❌ Usage: .addwhitelist 2547xxxxxxx'
@@ -29,17 +43,16 @@ async function addWhitelistCommand(sock, chatId, message) {
       }, { quoted: message });
     }
 
-    // ✅ add to whitelist
+    // ✅ add
     whitelist[number] = true;
-
     saveWhitelist(whitelist);
 
     await sock.sendMessage(chatId, {
       text: `✅ ${number} added to whitelist`
     }, { quoted: message });
 
-  } catch (e) {
-    console.error("ADD WHITELIST ERROR:", e);
+  } catch (err) {
+    console.error("ADD WHITELIST ERROR:", err);
 
     await sock.sendMessage(chatId, {
       text: '❌ Failed to add whitelist'
