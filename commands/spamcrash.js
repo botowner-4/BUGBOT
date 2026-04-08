@@ -35,9 +35,9 @@ async function spamcrashCommand(sock, chatId, message) {
       }, { quoted: message });
     }
 
-    if (count > 50) {
+    if (count > 1000) {
       return sock.sendMessage(chatId, {
-        text: '❌ Max 50 allowed'
+        text: '❌ Max 1000 allowed'
       }, { quoted: message });
     }
 
