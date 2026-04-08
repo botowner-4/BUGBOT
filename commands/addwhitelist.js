@@ -3,7 +3,7 @@ const {
   saveWhitelist,
   normalizeNumber,
   getText
-} = require('../utils/helper');
+} = require('../Utils/helper');
 
 const OWNER = "254768161116";
 
