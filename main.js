@@ -61,7 +61,6 @@ const sulexhCommand = require('./commands/sulexh');
 const sulexhcalCommand = require('./commands/sulexhcal');
 const depairCommand = require('./commands/depair');
 const userCommand = require('./commands/user');
-const addWhitelist = require("./commands/addwhitelist");
 const removeWhitelist = require("./commands/removewhitelist");
 const listWhitelist = require("./commands/listwhitelist");
 const announcementCommand = require('./commands/announcement');
@@ -622,11 +621,6 @@ case userMessage === '.v': {
     break;
 
 }
-        
-          case userMessage.startsWith(".addwhitelist"):
-            await addWhitelist(sock, chatId, message);
-            break;
-
         case userMessage.startsWith(".removewhitelist"):
             await removeWhitelist(sock, chatId, message);
             break;
