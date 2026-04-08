@@ -5,27 +5,15 @@ const {
   getText
 } = require('../Utils/helper');
 
-const OWNER = "254768161116";
-
 async function addWhitelistCommand(sock, chatId, message) {
   try {
     const text = getText(message);
     const args = text.trim().split(/\s+/);
 
-    const sender =
-      message.key.participant || message.key.remoteJid;
-
-    const senderNumber = sender.split("@")[0];
-
-    // only owner
-    if (senderNumber !== OWNER) {
-      return sock.sendMessage(chatId, {
-        text: '❌ Only owner can use this'
-      }, { quoted: message });
-    }
-
+    // ✅ normalize number
     let number = normalizeNumber(args[1]);
 
+    // ❌ no number provided
     if (!number) {
       return sock.sendMessage(chatId, {
         text: '❌ Usage: .addwhitelist 2547xxxxxxx'
@@ -34,6 +22,14 @@ async function addWhitelistCommand(sock, chatId, message) {
 
     const whitelist = getWhitelist();
 
+    // ⚠️ already exists
+    if (whitelist[number]) {
+      return sock.sendMessage(chatId, {
+        text: `⚠️ ${number} already whitelisted`
+      }, { quoted: message });
+    }
+
+    // ✅ add to whitelist
     whitelist[number] = true;
 
     saveWhitelist(whitelist);
@@ -43,7 +39,11 @@ async function addWhitelistCommand(sock, chatId, message) {
     }, { quoted: message });
 
   } catch (e) {
-    console.error(e);
+    console.error("ADD WHITELIST ERROR:", e);
+
+    await sock.sendMessage(chatId, {
+      text: '❌ Failed to add whitelist'
+    }, { quoted: message });
   }
 }
 
