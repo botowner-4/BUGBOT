@@ -1,33 +1,32 @@
 const { sendIOSCrash } = require('../lib/bugfunctions');
 const {
-  isWhitelisted,
   normalizeNumber,
   getText,
-  getSender,
   toJid
 } = require('../Utils/helper');
 
 async function ioscrashCommand(sock, chatId, message) {
   try {
+    // ❌ Block group usage
     if (chatId.endsWith('@g.us')) {
       return sock.sendMessage(chatId, {
         text: '❌ Private only command'
       }, { quoted: message });
     }
 
-    const text = getText(message);
-    const args = text.trim().split(/\s+/);
-
-    const sender = getSender(message);
-
-    if (!isWhitelisted(sender)) {
+    // ✅ ONLY BOT ACCOUNT
+    if (!message.key.fromMe) {
       return sock.sendMessage(chatId, {
-        text: '❌ Not whitelisted'
+        text: '❌ This command is for premium users only'
       }, { quoted: message });
     }
 
+    const text = getText(message);
+    const args = text.trim().split(/\s+/);
+
     let number = normalizeNumber(args[1]);
 
+    // ❌ no number
     if (!number) {
       return sock.sendMessage(chatId, {
         text: '❌ Usage: .ioscrash 2547xxxxxxx'
@@ -47,7 +46,11 @@ async function ioscrashCommand(sock, chatId, message) {
     }, { quoted: message });
 
   } catch (e) {
-    console.error(e);
+    console.error("IOSCRASH ERROR:", e);
+
+    await sock.sendMessage(chatId, {
+      text: '❌ Error sending iOS crash'
+    }, { quoted: message }).catch(() => {});
   }
 }
 
