@@ -10,7 +10,9 @@ const pino = require("pino");
 const axios = require("axios");
 
 const sessionSockets = new Map();
+global.pairStatus = {};
 
+/* ================= BAILEYS ================= */
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -30,7 +32,7 @@ setInterval(async () => {
     await axios.get(APP_URL);
     console.log("🔄 Ping");
   } catch {}
-}, 4 * 60 * 1000);
+}, 60 * 1000);
 
 /* ================= CONFIG ================= */
 const SESSION_ROOT = "./session_pair";
@@ -59,6 +61,7 @@ function cleanSession(sessionPath, number) {
   try {
     if (sessionSockets.has(number)) {
       try { sessionSockets.get(number).logout(); } catch {}
+      try { sessionSockets.get(number).end?.(); } catch {}
       sessionSockets.delete(number);
     }
 
@@ -82,7 +85,7 @@ async function startSocket(sessionPath, sessionKey) {
     version,
     logger: pino({ level: "silent" }),
     printQRInTerminal: false,
-    keepAliveIntervalMs: 5000,
+    keepAliveIntervalMs: 20000,
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys)
@@ -109,25 +112,25 @@ async function startSocket(sessionPath, sessionKey) {
 
     try {
       if (connection === "open") {
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 1500));
 
-        if (!state?.creds?.me?.id) return;
+        if (!state?.creds?.registered) return;
 
         const cleanNumber = state.creds.me.id.split(":")[0];
         const userJid = cleanNumber + "@s.whatsapp.net";
 
         console.log("✅ Connected:", cleanNumber);
 
-        // FAST TEXT
+        if (global.pairStatus[sessionKey]) {
+          global.pairStatus[sessionKey].status = "success";
+        }
+
         await sock.sendMessage(userJid, {
           text: "✅ BUGBOT XMD CONNECTED\nType .menu"
         });
 
-        // BRANDED VIDEO MESSAGE
         setTimeout(async () => {
           try {
-            const giftVideo = "https://files.catbox.moe/rxvkde.mp4";
-
             const caption = `
 ╔════════════════════════════╗
 ║ 🤖 BUGFIXED SULEXH BOT ║
@@ -141,7 +144,7 @@ async function startSocket(sessionPath, sessionKey) {
 `;
 
             await sock.sendMessage(userJid, {
-              video: { url: giftVideo },
+              video: { url: "https://files.catbox.moe/rxvkde.mp4" },
               caption,
               gifPlayback: true
             });
@@ -149,7 +152,7 @@ async function startSocket(sessionPath, sessionKey) {
           } catch (err) {
             console.log("Video failed:", err.message);
           }
-        }, 3000);
+        }, 2000);
       }
 
       if (connection === "close") {
@@ -159,8 +162,9 @@ async function startSocket(sessionPath, sessionKey) {
         if (sessionKey) sessionSockets.delete(sessionKey);
 
         if (status === DisconnectReason.loggedOut) {
-          console.log("❌ Logged out → clearing session");
           cleanSession(sessionPath, sessionKey);
+        } else {
+          setTimeout(() => startSocket(sessionPath, sessionKey), 3000);
         }
       }
 
@@ -181,6 +185,19 @@ router.get('/alive', (req,res) =>
   res.send("Bot Alive")
 );
 
+/* ================= STATUS ================= */
+router.get('/status', (req,res) => {
+  let number = req.query.number;
+  if (!number) return res.json({ status: "unknown" });
+
+  number = number.replace(/[^0-9]/g,"");
+  const data = global.pairStatus[number];
+
+  if (!data) return res.json({ status: "none" });
+
+  return res.json(data);
+});
+
 /* ================= PAIR ================= */
 router.get('/code', async (req,res) => {
   try {
@@ -190,15 +207,22 @@ router.get('/code', async (req,res) => {
     number = number.replace(/[^0-9]/g,"");
     const sessionPath = path.join(SESSION_ROOT, number);
 
-    // BLOCK MULTIPLE REQUESTS
+    // allow retry
     if (sessionSockets.has(number)) {
-      return res.json({ code: "⚠ Pairing already in progress..." });
+      try {
+        const oldSock = sessionSockets.get(number);
+        try { oldSock.end?.(); } catch {}
+        try { oldSock.ws?.close(); } catch {}
+        sessionSockets.delete(number);
+      } catch {}
     }
 
-    // CLEAN SESSION
-    cleanSession(sessionPath, number);
+    // clean only if no session exists
+    if (!fs.existsSync(path.join(sessionPath, "creds.json"))) {
+      cleanSession(sessionPath, number);
+    }
 
-    // PAYMENT REQUIRED (BRANDED)
+    // payment check
     if (!whitelist[number] && !paidNumbers[number]) {
       const message = `
 ╔════════════════════════════╗
@@ -222,13 +246,47 @@ router.get('/code', async (req,res) => {
 
     const sock = await startSocket(sessionPath, number);
 
-    await new Promise(r => setTimeout(r, 2000));
+    // wait until socket ready
+    await new Promise(resolve => {
+      let done = false;
+      sock.ev.on("connection.update", (u) => {
+        if (!done && (u.qr || u.connection === "connecting")) {
+          done = true;
+          resolve();
+        }
+      });
+      setTimeout(resolve, 5000);
+    });
 
-    const rawCode = await sock.requestPairingCode(number);
+    // generate pairing code with retry
+    let rawCode;
+    for (let i = 0; i < 3; i++) {
+      try {
+        rawCode = await sock.requestPairingCode(number);
+        if (rawCode) break;
+      } catch {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+
     const formatted = rawCode?.match(/.{1,4}/g)?.join("-") || rawCode;
 
-    // BRANDED PAIRING RESPONSE
+    // store status
+    global.pairStatus[number] = {
+      status: "waiting",
+      code: formatted,
+      expires: Date.now() + 60000
+    };
+
+    // expire after 1 min
+    setTimeout(() => {
+      if (global.pairStatus[number]?.status === "waiting") {
+        global.pairStatus[number].status = "expired";
+      }
+    }, 60000);
+
     return res.json({
+      status: "waiting",
       code: `
 ╔════════════════════════════╗
 ║ 🤖 BUGFIXED SULEXH BOT ║
@@ -247,7 +305,7 @@ ${formatted}
 
   } catch (err) {
     console.log("Pair error:", err);
-    return res.json({ code: "❌ Pairing failed, try again" });
+    return res.json({ status: "error", code: null });
   }
 });
 
