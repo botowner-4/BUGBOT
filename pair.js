@@ -186,6 +186,7 @@ return res.json({
   console.log("Pairing Error:", err);
   return res.json({ code: "Service Unavailable" });
 }
+});
 /* SMS WEBHOOK TO AUTO-APPROVE PAYMENT AND WHITELIST */
 router.post('/sms', express.json(), (req,res)=>{
   let { number, amount } = req.body;
