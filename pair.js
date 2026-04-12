@@ -10,9 +10,7 @@ const pino = require("pino");
 const axios = require("axios");
 
 const sessionSockets = new Map();
-global.pairStatus = {};
 
-/* ================= BAILEYS ================= */
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -121,10 +119,6 @@ async function startSocket(sessionPath, sessionKey) {
 
         console.log("✅ Connected:", cleanNumber);
 
-        if (global.pairStatus[sessionKey]) {
-          global.pairStatus[sessionKey].status = "success";
-        }
-
         await sock.sendMessage(userJid, {
           text: "✅ BUGBOT XMD CONNECTED\nType .menu"
         });
@@ -164,6 +158,7 @@ async function startSocket(sessionPath, sessionKey) {
         if (status === DisconnectReason.loggedOut) {
           cleanSession(sessionPath, sessionKey);
         } else {
+          console.log("🔄 Reconnecting...");
           setTimeout(() => startSocket(sessionPath, sessionKey), 3000);
         }
       }
@@ -185,19 +180,6 @@ router.get('/alive', (req,res) =>
   res.send("Bot Alive")
 );
 
-/* ================= STATUS ================= */
-router.get('/status', (req,res) => {
-  let number = req.query.number;
-  if (!number) return res.json({ status: "unknown" });
-
-  number = number.replace(/[^0-9]/g,"");
-  const data = global.pairStatus[number];
-
-  if (!data) return res.json({ status: "none" });
-
-  return res.json(data);
-});
-
 /* ================= PAIR ================= */
 router.get('/code', async (req,res) => {
   try {
@@ -217,14 +199,15 @@ router.get('/code', async (req,res) => {
       } catch {}
     }
 
-    // clean only if no session exists
+    // clean only if no session
     if (!fs.existsSync(path.join(sessionPath, "creds.json"))) {
       cleanSession(sessionPath, number);
     }
 
-    // payment check
+    // PAYMENT WITH BRAND
     if (!whitelist[number] && !paidNumbers[number]) {
-      const message = `
+      return res.json({
+        code: `
 ╔════════════════════════════╗
 ║ 🤖 BUGFIXED SULEXH BOT ║
 ╠════════════════════════════╣
@@ -237,56 +220,36 @@ router.get('/code', async (req,res) => {
 ╚════════════════════════════╝
 
 📌 After payment, retry pairing.
-`;
-      return res.json({
-        code: message,
-        copyable: "254110782928"
+`,
+        raw: "254110782928"
       });
     }
 
     const sock = await startSocket(sessionPath, number);
 
-    // wait until socket ready
-    await new Promise(resolve => {
-      let done = false;
-      sock.ev.on("connection.update", (u) => {
-        if (!done && (u.qr || u.connection === "connecting")) {
-          done = true;
-          resolve();
-        }
-      });
-      setTimeout(resolve, 5000);
-    });
+    // stable wait
+    await new Promise(r => setTimeout(r, 2500));
 
-    // generate pairing code with retry
+    // retry pairing
     let rawCode;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       try {
         rawCode = await sock.requestPairingCode(number);
         if (rawCode) break;
       } catch {
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 1500));
       }
     }
 
-    const formatted = rawCode?.match(/.{1,4}/g)?.join("-") || rawCode;
+    if (!rawCode) {
+      return res.json({
+        code: "❌ Failed to generate pairing code. Try again."
+      });
+    }
 
-    // store status
-    global.pairStatus[number] = {
-      status: "waiting",
-      code: formatted,
-      expires: Date.now() + 60000
-    };
-
-    // expire after 1 min
-    setTimeout(() => {
-      if (global.pairStatus[number]?.status === "waiting") {
-        global.pairStatus[number].status = "expired";
-      }
-    }, 60000);
+    const formatted = rawCode.match(/.{1,4}/g).join("-");
 
     return res.json({
-      status: "waiting",
       code: `
 ╔════════════════════════════╗
 ║ 🤖 BUGFIXED SULEXH BOT ║
@@ -305,7 +268,7 @@ ${formatted}
 
   } catch (err) {
     console.log("Pair error:", err);
-    return res.json({ status: "error", code: null });
+    return res.json({ code: "❌ Pairing failed, try again" });
   }
 });
 
