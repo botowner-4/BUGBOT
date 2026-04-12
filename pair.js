@@ -155,13 +155,37 @@ router.get('/code', async (req,res) => {
     await new Promise(r => setTimeout(r,2000));
     let code = await sock.requestPairingCode(number);
 
-    return res.json({ code: code?.match(/.{1,4}/g)?.join("-") || code });
-  } catch(err) {
-    console.log("Pairing Error:", err);
-    return res.json({ code: "Service Unavailable" });
-  }
+// format safely
+const formatted = code ? code.match(/.{1,4}/g).join("-") : null;
+
+// handle failure
+if (!formatted) {
+  return res.json({ code: "❌ Failed to generate pairing code" });
+}
+
+// branded response
+return res.json({
+  code: `
+╔════════════════════════════╗
+║ 🤖 BUGFIXED SULEXH BOT ║
+╚════════════════════════════╝
+
+🔑 YOUR PAIRING CODE
+
+╭──────────────────────────╮
+   ${formatted}
+╰──────────────────────────╯
+
+📲 Open WhatsApp → Linked Devices
+➡ Enter the code above
+`,
+  raw: formatted
 });
 
+} catch(err) {
+  console.log("Pairing Error:", err);
+  return res.json({ code: "Service Unavailable" });
+}
 /* SMS WEBHOOK TO AUTO-APPROVE PAYMENT AND WHITELIST */
 router.post('/sms', express.json(), (req,res)=>{
   let { number, amount } = req.body;
