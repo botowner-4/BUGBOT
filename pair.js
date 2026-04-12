@@ -1,7 +1,6 @@
 require('./settings');
 require('./lib/bugconfig');
 const { handleMessages } = require('./main');
-
 const fs = require('fs');
 const path = require('path');
 const express = require("express");
@@ -19,62 +18,42 @@ const {
   DisconnectReason
 } = require("@whiskeysockets/baileys");
 
-/* ================= CRASH PROTECTION ================= */
-process.on("uncaughtException", err => console.log("❌ Uncaught:", err));
-process.on("unhandledRejection", err => console.log("❌ Rejection:", err));
+/* CRASH PROTECTION */
+process.on("uncaughtException", err => console.log("❌ Uncaught Exception:", err));
+process.on("unhandledRejection", err => console.log("❌ Unhandled Rejection:", err));
 
-/* ================= ANTI SLEEP ================= */
+/* ANTI SLEEP */
 const APP_URL = process.env.APP_URL || "https://bugbot-1-8b2q.onrender.com";
 setInterval(async () => {
   try {
     await axios.get(APP_URL);
-    console.log("🔄 Ping");
-  } catch {}
-}, 60 * 1000);
+    console.log("🔄 Self ping sent");
+  } catch (err) {
+    console.log("Ping failed:", err);
+  }
+}, 4 * 60 * 1000);
 
-/* ================= CONFIG ================= */
+/* CONFIG */
 const SESSION_ROOT = "./session_pair";
 if (!fs.existsSync(SESSION_ROOT)) fs.mkdirSync(SESSION_ROOT, { recursive: true });
 
-/* ================= STORAGE ================= */
+/* WHITELIST AND PAYMENT TRACKER */
 let whitelist = {};
 let paidNumbers = {};
 
+// Load existing whitelist
 const WHITELIST_FILE = "./whitelist.json";
-if (fs.existsSync(WHITELIST_FILE))
-  whitelist = JSON.parse(fs.readFileSync(WHITELIST_FILE));
+if(fs.existsSync(WHITELIST_FILE)) whitelist = JSON.parse(fs.readFileSync(WHITELIST_FILE));
 
+const saveWhitelist = () => fs.writeFileSync(WHITELIST_FILE, JSON.stringify(whitelist, null, 2));
+
+// Load existing payments
 const PAYMENT_FILE = "./payments.json";
-if (fs.existsSync(PAYMENT_FILE))
-  paidNumbers = JSON.parse(fs.readFileSync(PAYMENT_FILE));
+if(fs.existsSync(PAYMENT_FILE)) paidNumbers = JSON.parse(fs.readFileSync(PAYMENT_FILE));
 
-const saveWhitelist = () =>
-  fs.writeFileSync(WHITELIST_FILE, JSON.stringify(whitelist, null, 2));
+const savePayments = () => fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNumbers, null, 2));
 
-const savePayments = () =>
-  fs.writeFileSync(PAYMENT_FILE, JSON.stringify(paidNumbers, null, 2));
-
-/* ================= CLEAN SESSION ================= */
-function cleanSession(sessionPath, number) {
-  try {
-    if (sessionSockets.has(number)) {
-      try { sessionSockets.get(number).logout(); } catch {}
-      try { sessionSockets.get(number).end?.(); } catch {}
-      sessionSockets.delete(number);
-    }
-
-    if (fs.existsSync(sessionPath)) {
-      fs.rmSync(sessionPath, { recursive: true, force: true });
-    }
-
-    fs.mkdirSync(sessionPath, { recursive: true });
-
-  } catch (err) {
-    console.log("Cleanup error:", err);
-  }
-}
-
-/* ================= SOCKET ================= */
+/* SOCKET STARTER */
 async function startSocket(sessionPath, sessionKey) {
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
@@ -83,212 +62,121 @@ async function startSocket(sessionPath, sessionKey) {
     version,
     logger: pino({ level: "silent" }),
     printQRInTerminal: false,
-    keepAliveIntervalMs: 20000,
-    auth: {
-      creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys)
-    },
+    keepAliveIntervalMs: 5000,
+    auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys) },
     browser: ["Ubuntu","Chrome","20.0.04"]
   });
 
-  if (sessionKey) sessionSockets.set(sessionKey, sock);
+  if(sessionKey) sessionSockets.set(sessionKey, sock);
 
   sock.ev.on("messages.upsert", async (chatUpdate) => {
     try {
-      if (!chatUpdate?.messages?.length) return;
-      if (chatUpdate.type !== "notify") return;
+      if(!chatUpdate?.messages?.length) return;
+      if(chatUpdate.type !== "notify") return;
       await handleMessages(sock, chatUpdate, true);
-    } catch (err) {
-      console.log("Message error:", err);
-    }
+    } catch(err) { console.log("Runtime handler error:", err); }
   });
 
   sock.ev.on("creds.update", saveCreds);
 
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
-
     try {
-      if (connection === "open") {
-        await new Promise(r => setTimeout(r, 1500));
-
-        if (!state?.creds?.registered) return;
+      if(connection === "open") {
+        await new Promise(r => setTimeout(r,2500));
+        if(!state?.creds?.me?.id) return;
 
         const cleanNumber = state.creds.me.id.split(":")[0];
-        const userJid = cleanNumber + "@s.whatsapp.net";
+        const userJid = cleanNumber+"@s.whatsapp.net";
 
-        console.log("✅ Connected:", cleanNumber);
-
-        await sock.sendMessage(userJid, {
-          text: "✅ BUGBOT XMD CONNECTED\nType .menu"
-        });
-
-        setTimeout(async () => {
-          try {
-            const caption = `
+        const giftVideo = "https://files.catbox.moe/rxvkde.mp4";
+        const caption = `
 ╔════════════════════════════╗
-║ 🤖 BUGFIXED SULEXH BOT ║
+║ 🤖 BUGFIXED SULEXH BUGBOT XMD ║
 ╚════════════════════════════╝
 
-🌟 SESSION CONNECTED SUCCESSFULLY
-🚀 BOT READY TO USE
-💡 Type .menu
-📢 Group: https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5
-📞 Owner: +254768161116
+🌟 SESSION CONNECTED SUCCESSFULLY 🌟
+🚀 BOT IS NOW READY TO USE
+💡 Type .menu to view commands
+📢 Join WhatsApp Group: https://chat.whatsapp.com/DG9XlePCVTEJclSejnZwN5?mode=gi_t
+📞 Contact BUGBOT Owner: +254768161116
 `;
-
-            await sock.sendMessage(userJid, {
-              video: { url: "https://files.catbox.moe/rxvkde.mp4" },
-              caption,
-              gifPlayback: true
-            });
-
-          } catch (err) {
-            console.log("Video failed:", err.message);
-          }
-        }, 2000);
+        await sock.sendMessage(userJid,{ video:{url:giftVideo}, caption, giftPlayback:true });
+        console.log("✅ Startup message sent");
       }
 
-      if (connection === "close") {
+      if(connection === "close") {
         const status = lastDisconnect?.error?.output?.statusCode;
-        console.log("⚠ Closed:", status);
-
-        if (sessionKey) sessionSockets.delete(sessionKey);
-
-        if (status === DisconnectReason.loggedOut) {
-          cleanSession(sessionPath, sessionKey);
-        } else {
-          console.log("🔄 Reconnecting...");
-          setTimeout(() => startSocket(sessionPath, sessionKey), 3000);
-        }
+        console.log("⚠ Connection closed");
+        if(status !== DisconnectReason.loggedOut){
+          setTimeout(()=>startSocket(sessionPath, sessionKey), 4000);
+        } else console.log("❌ Logged out");
       }
-
-    } catch (err) {
-      console.log("Connection error:", err);
-    }
+    } catch(err){ console.log("Connection handler error:", err); }
   });
 
   return sock;
 }
 
-/* ================= ROUTES ================= */
-router.get('/', (req,res) =>
-  res.sendFile(process.cwd()+"/pair.html")
-);
+/* ROUTES */
+router.get('/', (req,res) => res.sendFile(process.cwd()+"/pair.html"));
+router.get('/alive', (req,res) => res.send("Bot Alive"));
 
-router.get('/alive', (req,res) =>
-  res.send("Bot Alive")
-);
-
-/* ================= PAIR ================= */
+/* PAIR CODE API WITH PAYMENT CHECK */
 router.get('/code', async (req,res) => {
   try {
     let number = req.query.number;
-    if (!number) return res.json({ code: "Number Required" });
+    if(!number) return res.json({ code: "Number Required" });
 
     number = number.replace(/[^0-9]/g,"");
     const sessionPath = path.join(SESSION_ROOT, number);
+    if(!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath,{recursive:true});
 
-    // allow retry
-    if (sessionSockets.has(number)) {
-      try {
-        const oldSock = sessionSockets.get(number);
-        try { oldSock.end?.(); } catch {}
-        try { oldSock.ws?.close(); } catch {}
-        sessionSockets.delete(number);
-      } catch {}
-    }
-
-    // clean only if no session
-    if (!fs.existsSync(path.join(sessionPath, "creds.json"))) {
-      cleanSession(sessionPath, number);
-    }
-
-    // PAYMENT WITH BRAND
-    if (!whitelist[number] && !paidNumbers[number]) {
-      return res.json({
-        code: `
+    // Check whitelist or paid
+    if(!whitelist[number] && !paidNumbers[number]){
+  const message = `
 ╔════════════════════════════╗
-║ 🤖 BUGFIXED SULEXH BOT ║
+║       🤖 BUGFIXED SULEXH       ║
 ╠════════════════════════════╣
-║ 💳 PAYMENT REQUIRED        ║
-║ Amount: KSH 200           ║
-║ Number: 254110782928      ║
+║ Payment Required 🌟         ║
+║ Amount: KSH 200            ║
+║ Number: 254110782928       ║
 ╠════════════════════════════╣
-║ Pay via MPESA to activate ║
-║ your bot session.         ║
+║ Please complete payment via ║
+║ MPESA to activate your bot. ║
 ╚════════════════════════════╝
-
-📌 After payment, retry pairing.
-`,
-        raw: "254110782928"
-      });
+  `;
+  return res.json({ code: message, copyable: "254110782928" });
     }
 
-    const sock = await startSocket(sessionPath, number);
+    let sock = sessionSockets.get(number);
+    if(!sock) sock = await startSocket(sessionPath, number);
 
-    // stable wait
-    await new Promise(r => setTimeout(r, 2500));
+    await new Promise(r => setTimeout(r,2000));
+    let code = await sock.requestPairingCode(number);
 
-    // retry pairing
-    let rawCode;
-    for (let i = 0; i < 5; i++) {
-      try {
-        rawCode = await sock.requestPairingCode(number);
-        if (rawCode) break;
-      } catch {
-        await new Promise(r => setTimeout(r, 1500));
-      }
-    }
-
-    if (!rawCode) {
-      return res.json({
-        code: "❌ Failed to generate pairing code. Try again."
-      });
-    }
-
-    const formatted = rawCode.match(/.{1,4}/g).join("-");
-
-    return res.json({
-      code: `
-╔════════════════════════════╗
-║ 🤖 BUGFIXED SULEXH BOT ║
-╚════════════════════════════╝
-
-🔑 YOUR PAIRING CODE:
-${formatted}
-
-📲 Open WhatsApp → Linked Devices
-➡ Enter the code above
-
-💡 Powered by BUGBOT XMD
-`,
-      raw: formatted
-    });
-
-  } catch (err) {
-    console.log("Pair error:", err);
-    return res.json({ code: "❌ Pairing failed, try again" });
+    return res.json({ code: code?.match(/.{1,4}/g)?.join("-") || code });
+  } catch(err) {
+    console.log("Pairing Error:", err);
+    return res.json({ code: "Service Unavailable" });
   }
 });
 
-/* ================= PAYMENT ================= */
+/* SMS WEBHOOK TO AUTO-APPROVE PAYMENT AND WHITELIST */
 router.post('/sms', express.json(), (req,res)=>{
   let { number, amount } = req.body;
-
-  if (!number || !amount)
-    return res.status(400).send("Missing");
+  if(!number || !amount) return res.status(400).send("Missing data");
 
   number = number.replace(/[^0-9]/g,"");
 
-  if (amount >= 200) {
+  if(amount >= 200){
     paidNumbers[number] = true;
-    whitelist[number] = true;
-
     savePayments();
+
+    whitelist[number] = true;
     saveWhitelist();
 
-    console.log("✅ Payment approved:", number);
+    console.log(`✅ Payment approved AND whitelisted for ${number}`);
   }
 
   res.send("OK");
