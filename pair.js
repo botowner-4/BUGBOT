@@ -23,14 +23,10 @@ process.on("uncaughtException", err => console.log("❌ Uncaught Exception:", er
 process.on("unhandledRejection", err => console.log("❌ Unhandled Rejection:", err));
 
 /* ANTI SLEEP */
-const APP_URL = process.env.APP_URL || "https://bugbot-1-8b2q.onrender.com";
+const APP_URL = process.env.APP_URL || "https://bugbot-luyr.onrender.com";
 setInterval(async () => {
-  try {
-    await axios.get(APP_URL);
-    console.log("🔄 Self ping sent");
-  } catch (err) {
-    console.log("Ping failed:", err);
-  }
+  try { await axios.get(APP_URL); console.log("🔄 Self ping sent"); } 
+  catch { console.log("Ping failed"); }
 }, 4 * 60 * 1000);
 
 /* CONFIG */
@@ -155,38 +151,13 @@ router.get('/code', async (req,res) => {
     await new Promise(r => setTimeout(r,2000));
     let code = await sock.requestPairingCode(number);
 
-// format safely
-const formatted = code ? code.match(/.{1,4}/g).join("-") : null;
-
-// handle failure
-if (!formatted) {
-  return res.json({ code: "❌ Failed to generate pairing code" });
-}
-
-// branded response
-return res.json({
-  code: `
-╔════════════════════════════╗
-║ 🤖 BUGFIXED SULEXH BOT ║
-╚════════════════════════════╝
-
-🔑 YOUR PAIRING CODE
-
-╭──────────────────────────╮
-   ${formatted}
-╰──────────────────────────╯
-
-📲 Open WhatsApp → Linked Devices
-➡ Enter the code above
-`,
-  raw: formatted
+    return res.json({ code: code?.match(/.{1,4}/g)?.join("-") || code });
+  } catch(err) {
+    console.log("Pairing Error:", err);
+    return res.json({ code: "Service Unavailable" });
+  }
 });
 
-} catch(err) {
-  console.log("Pairing Error:", err);
-  return res.json({ code: "Service Unavailable" });
-}
-});
 /* SMS WEBHOOK TO AUTO-APPROVE PAYMENT AND WHITELIST */
 router.post('/sms', express.json(), (req,res)=>{
   let { number, amount } = req.body;
