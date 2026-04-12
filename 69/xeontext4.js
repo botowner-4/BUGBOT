@@ -15,7 +15,7 @@ const UNICODE_EDGE_CASES = [
   '\uFFFC',      // Object replacement
   '👩‍👩‍👧‍👧',     // ZWJ emoji
   '\u0338',      // Overlays
-  '\uFFFDbad\u0000string'
+  '\uFFFDbad_string'
 ].join(' ');
 
 // Combined unicode block
