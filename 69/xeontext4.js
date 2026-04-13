@@ -61,30 +61,30 @@ const EMOJI_VARIANTS = [
 
 // 6. MASSIVE FAKE MEDIA LINKS (Parser Stress)
 const FAKE_VIDEO_URLS = [
-  "https://example.com/video-" + "A".repeat(5000) + ".mp4",
-  "https://cdn.example.com/media/" + "B".repeat(4000) + "/video.mov",
-  "https://storage.com/v1/bucket/" + "C".repeat(6000) + ".avi",
-  "file:///storage/emulated/0/DCIM/" + "D".repeat(3000) + ".webm",
-  "content://media/external/video/" + "E".repeat(4500) + ".mkv",
-  "blob:https://example.com/" + "F".repeat(4000),
-  "data:video/mp4;base64," + "A".repeat(8000),
+  "https://example.com/video-" + "A".repeat(1000) + ".mp4",
+  "https://cdn.example.com/media/" + "B".repeat(700) + "/video.mov",
+  "https://storage.com/v1/bucket/" + "C".repeat(600) + ".avi",
+  "file:///storage/emulated/0/DCIM/" + "D".repeat(300) + ".webm",
+  "content://media/external/video/" + "E".repeat(450) + ".mkv",
+  "blob:https://example.com/" + "F".repeat(2000),
+  "data:video/mp4;base64," + "A".repeat(4000),
 ];
 
 const FAKE_IMAGE_URLS = [
-  "https://example.com/image-" + "X".repeat(6000) + ".jpg",
-  "https://images.com/photo/" + "Y".repeat(5500) + ".png",
-  "https://cdn.example.com/" + "Z".repeat(7000) + ".webp",
-  "file:///sdcard/Pictures/" + "W".repeat(4000) + ".heic",
-  "content://media/external/images/" + "V".repeat(5000) + ".raw",
-  "data:image/jpeg;base64," + "U".repeat(10000),
+  "https://example.com/image-" + "X".repeat(1000) + ".jpg",
+  "https://images.com/photo/" + "Y".repeat(500) + ".png",
+  "https://cdn.example.com/" + "Z".repeat(3000) + ".webp",
+  "file:///sdcard/Pictures/" + "W".repeat(1000) + ".heic",
+  "content://media/external/images/" + "V".repeat(1000) + ".raw",
+  "data:image/jpeg;base64," + "U".repeat(1000),
 ];
 
 // 7. FAKE DOCUMENT LINKS
 const FAKE_DOCUMENT_URLS = [
-  "https://docs.example.com/view/" + "D".repeat(4000) + ".pdf",
-  "https://storage.com/documents/" + "C".repeat(5000) + ".docx",
-  "https://files.example.com/" + "B".repeat(6000) + ".pptx",
-  "file:///system/app/" + "A".repeat(3000) + ".apk",
+  "https://docs.example.com/view/" + "D".repeat(1000) + ".pdf",
+  "https://storage.com/documents/" + "C".repeat(1000) + ".docx",
+  "https://files.example.com/" + "B".repeat(2000) + ".pptx",
+  "file:///system/app/" + "A".repeat(1500) + ".apk",
 ];
 
 // 8. MALFORMED PROTOCOL STRINGS
@@ -170,9 +170,9 @@ function fakeImageLinkAttack(count = 100) {
     const exifPayload = 
       "Exif\x00\x00II" +
       "*\x00\x08\x00\x00\x00" +
-      "A".repeat(5000) +
-      "B".repeat(5000) +
-      "C".repeat(5000);
+      "A".repeat(2000) +
+      "B".repeat(2000) +
+      "C".repeat(2000);
     
     payload += url + "\n";
     payload += exifPayload + "\n";
@@ -191,7 +191,7 @@ function protocolParsingAttack() {
   
   for (let i = 0; i < 20; i++) {
     payload += PROTOCOL_ATTACKS[rand(PROTOCOL_ATTACKS.length)];
-    payload += "A".repeat(2000);
+    payload += "A".repeat(1000);
     payload += "\n";
   }
   
