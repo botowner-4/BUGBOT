@@ -115,7 +115,7 @@ const rand = n => Math.floor(Math.random() * n);
  * TECHNIQUE 1: Massive Combining Mark Stack
  * → Tests: Text renderer, glyph cache
  */
-function extremeStackingMarks(depth = 50, width = 25) {
+function extremeStackingMarks(depth = 100, width = 150) {
   const payload = [];
 
   for (let w = 0; w < width; w++) {
