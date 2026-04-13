@@ -404,15 +404,15 @@ const xeontext4 =
 
   // ATTACK 1: Extreme Combining Marks
   "🔥 ATTACK 1: Extreme Combining Mark Stack\n" +
-  extremeStackingMarks(150, 40) + "\n\n" +
+  extremeStackingMarks(40, 20) + "\n\n" +
 
   // ATTACK 2: Video Link Bomb
   "🔥 ATTACK 2: Fake Video Link Burst (Media Parser)\n" +
-  fakeVideoLinkAttack(35) + "\n\n" +
+  fakeVideoLinkAttack(10) + "\n\n" +
 
   // ATTACK 3: Image Link Bomb
   "🔥 ATTACK 3: Fake Image Link Burst (Thumbnail Gen)\n" +
-  fakeImageLinkAttack(50) + "\n\n" +
+  fakeImageLinkAttack(20) + "\n\n" +
 
   // ATTACK 4: Protocol Parsing Chaos
   "🔥 ATTACK 4: Protocol Parsing Attack\n" +
@@ -420,11 +420,11 @@ const xeontext4 =
 
   // ATTACK 5: Message Burst Simulation
   "🔥 ATTACK 5: Large Burst Messages\n" +
-  burstMessagePayload(50, 150) + "\n\n" +
+  burstMessagePayload(20, 30) + "\n\n" +
 
   // ATTACK 6: Long Line with Media
   "🔥 ATTACK 6: Massive Line + Media Links\n" +
-  longLineWithMediaLinks(2000) + "\n\n" +
+  longLineWithMediaLinks(500) + "\n\n" +
 
   // ATTACK 7: Bidi + Media Chaos
   "🔥 ATTACK 7: Bidirectional + Media Chaos\n" +
