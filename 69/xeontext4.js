@@ -61,41 +61,41 @@ const EMOJI_VARIANTS = [
 
 // 6. MASSIVE FAKE MEDIA LINKS (Parser Stress)
 const FAKE_VIDEO_URLS = [
-  "https://example.com/video-" + "A".repeat(500) + ".mp4",
-  "https://cdn.example.com/media/" + "B".repeat(50) + "/video.mov",
-  "https://storage.com/v1/bucket/" + "C".repeat(200) + ".avi",
+  "https://example.com/video-" + "A".repeat(300) + ".mp4",
+  "https://cdn.example.com/media/" + "B".repeat(300) + "/video.mov",
+  "https://storage.com/v1/bucket/" + "C".repeat(300) + ".avi",
   "file:///storage/emulated/0/DCIM/" + "D".repeat(300) + ".webm",
-  "content://media/external/video/" + "E".repeat(150) + ".mkv",
-  "blob:https://example.com/" + "F".repeat(200),
-  "data:video/mp4;base64," + "A".repeat(200),
+  "content://media/external/video/" + "E".repeat(300) + ".mkv",
+  "blob:https://example.com/" + "F".repeat(300),
+  "data:video/mp4;base64," + "A".repeat(300),
 ];
 
 const FAKE_IMAGE_URLS = [
-  "https://example.com/image-" + "X".repeat(500) + ".jpg",
-  "https://images.com/photo/" + "Y".repeat(200) + ".png",
-  "https://cdn.example.com/" + "Z".repeat(200) + ".webp",
-  "file:///sdcard/Pictures/" + "W".repeat(100) + ".heic",
-  "content://media/external/images/" + "V".repeat(400) + ".raw",
+  "https://example.com/image-" + "X".repeat(300) + ".jpg",
+  "https://images.com/photo/" + "Y".repeat(300) + ".png",
+  "https://cdn.example.com/" + "Z".repeat(300) + ".webp",
+  "file:///sdcard/Pictures/" + "W".repeat(300) + ".heic",
+  "content://media/external/images/" + "V".repeat(300) + ".raw",
   "data:image/jpeg;base64," + "U".repeat(300),
 ];
 
 // 7. FAKE DOCUMENT LINKS
 const FAKE_DOCUMENT_URLS = [
-  "https://docs.example.com/view/" + "D".repeat(400) + ".pdf",
-  "https://storage.com/documents/" + "C".repeat(100) + ".docx",
-  "https://files.example.com/" + "B".repeat(500) + ".pptx",
-  "file:///system/app/" + "A".repeat(500) + ".apk",
+  "https://docs.example.com/view/" + "D".repeat(300) + ".pdf",
+  "https://storage.com/documents/" + "C".repeat(300) + ".docx",
+  "https://files.example.com/" + "B".repeat(300) + ".pptx",
+  "file:///system/app/" + "A".repeat(300) + ".apk",
 ];
 
 // 8. MALFORMED PROTOCOL STRINGS
 const PROTOCOL_ATTACKS = [
-  "http://".repeat(200),
+  "http://".repeat(300),
   "https://".repeat(300),
-  "://".repeat(200),
-  "file://".repeat(100),
-  "ftp://".repeat(200),
-  "smb://".repeat(100),
-  "rtmp://".repeat(100),
+  "://".repeat(300),
+  "file://".repeat(300),
+  "ftp://".repeat(300),
+  "smb://".repeat(300),
+  "rtmp://".repeat(300),
 ];
 
 // 9. SCRIPTS
@@ -115,7 +115,7 @@ const rand = n => Math.floor(Math.random() * n);
  * TECHNIQUE 1: Massive Combining Mark Stack
  * → Tests: Text renderer, glyph cache
  */
-function extremeStackingMarks(depth = 100, width = 150) {
+function extremeStackingMarks(depth = 100, width = 50) {
   const payload = [];
 
   for (let w = 0; w < width; w++) {
@@ -139,8 +139,8 @@ function fakeVideoLinkAttack(count = 50) {
   for (let i = 0; i < count; i++) {
     const url = FAKE_VIDEO_URLS[rand(FAKE_VIDEO_URLS.length)];
     const metadata = {
-      title: "A".repeat(200),
-      description: "B".repeat(200),
+      title: "A".repeat(300),
+      description: "B".repeat(300),
       duration: "9999999999",
       width: "99999999",
       height: "99999999",
@@ -160,6 +160,93 @@ function fakeVideoLinkAttack(count = 50) {
  * TECHNIQUE 3: Fake Image Link with Heavy Metadata
  * → Tests: Image parser, thumbnail cache, EXIF processing
  */
+function fakeImageLinkAttack(count = 100) {
+  let payload = "";
+  
+  for (let i = 0; i < count; i++) {
+    const url = FAKE_IMAGE_URLS[rand(FAKE_IMAGE_URLS.length)];
+    
+    // Fake EXIF data
+    const exifPayload = 
+      "Exif\x00\x00II" +
+      "*\x00\x08\x00\x00\x00" +
+      "A".repeat(300) +
+      "B".repeat(300) +
+      "C".repeat(300);
+    
+    payload += url + "\n";
+    payload += exifPayload + "\n";
+    payload += INVISIBLE.join("") + "\n";
+  }
+  
+  return payload;
+}
+
+/**
+ * TECHNIQUE 4: Protocol Parsing Attack
+ * → Tests: URL parser, protocol handler
+ */
+function protocolParsingAttack() {
+  let payload = "";
+  
+  for (let i = 0; i < 20; i++) {
+    payload += PROTOCOL_ATTACKS[rand(PROTOCOL_ATTACKS.length)];
+    payload += "A".repeat(300);
+    payload += "\n";
+  }
+  
+  return payload;
+}
+
+/**
+ * TECHNIQUE 5: Burst Message Simulation (Multiple Messages)
+ * → Tests: Message queue, rendering pipeline
+ */
+function burstMessagePayload(burstCount = 100, msgPerBurst = 500) {
+  let payload = "";
+  
+  for (let b = 0; b < burstCount; b++) {
+    for (let m = 0; m < msgPerBurst; m++) {
+      payload += "M" + m + " ";
+    }
+    payload += "\n";
+    payload += INVISIBLE.join("").repeat(50);
+  }
+  
+  return payload;
+}
+
+/**
+ * TECHNIQUE 6: Massive Long Line with Media Links
+ * → Tests: Line breaking + URL parsing
+ */
+function longLineWithMediaLinks(length = 5000) {
+  let payload = "";
+  
+  for (let i = 0; i < length; i++) {
+    if (i % 200 === 0) {
+      payload += FAKE_VIDEO_URLS[rand(FAKE_VIDEO_URLS.length)];
+    } else if (i % 300 === 0) {
+      payload += FAKE_IMAGE_URLS[rand(FAKE_IMAGE_URLS.length)];
+    } else {
+      payload += SCRIPTS.LATIN[rand(SCRIPTS.LATIN.length)];
+    }
+    
+    // Add combining marks
+    if (i % 50 === 0) {
+      for (let j = 0; j < 5; j++) {
+        payload += COMBINING[rand(COMBINING.length)];
+      }
+    }
+  }
+  
+  return payload;
+}
+
+/**
+ * TECHNIQUE 7: RTL/LTR Chaos with Media Links
+ * → Tests: Bidi algorithm + media parser confusion
+ */
 function bidiMediaChaos() {
   let payload = "";
   
@@ -172,7 +259,7 @@ function bidiMediaChaos() {
     payload += FAKE_VIDEO_URLS[rand(FAKE_VIDEO_URLS.length)];
     payload += BIDI.POP + "\n";
     
-    payload += INVISIBLE.join("").repeat(30);
+    payload += INVISIBLE.join("").repeat(100);
   }
   
   return payload;
@@ -263,21 +350,21 @@ function metadataPoisoning() {
   let payload = "";
   
   const poisonedMetadata = {
-    title: "A".repeat(500),
+    title: "A".repeat(300),
     description: "B".repeat(300),
     keywords: FAKE_IMAGE_URLS.concat(FAKE_VIDEO_URLS).join(","),
-    author: "C".repeat(500),
-    copyright: "D".repeat(100),
+    author: "C".repeat(300),
+    copyright: "D".repeat(300),
     exif: {
-      model: "E".repeat(200),
-      lens: "F".repeat(100),
-      location: "G".repeat(200)
+      model: "E".repeat(300),
+      lens: "F".repeat(300),
+      location: "G".repeat(300)
     },
     iptc: {
-      caption: "H".repeat(200),
-      keywords: "I".repeat(200)
+      caption: "H".repeat(300),
+      keywords: "I".repeat(300)
     },
-    xmp: "J".repeat(200)
+    xmp: "J".repeat(300)
   };
   
   payload += JSON.stringify(poisonedMetadata) + "\n";
@@ -300,7 +387,7 @@ function rapidProtocolSwitching(switches = 120) {
   
   for (let i = 0; i < switches; i++) {
     payload += protocols[rand(protocols.length)];
-    payload += "A".repeat(200);
+    payload += "A".repeat(300);
     payload += "\n";
   }
   
@@ -319,51 +406,48 @@ let xeontext4 =
   "Advanced Protocol & PAYLOAD ATTACK\n" +
   "════════════════════════════════════════════\n\n" +
 
-  // ATTACK 1: Extreme Combining Marks
+  
   "🔥 ATTACK 1: Extreme Combining Mark Stack\n" +
-  extremeStackingMarks(100, 50) + "\n\n" +
+  extremeStackingMarks(50, 25) + "\n\n" +
 
-  // ATTACK 2: Video Link Bomb
+  
   "🔥 ATTACK 2: Fake Video Link Burst (Media Parser)\n" +
-  fakeVideoLinkAttack(10) + "\n\n" +
+  fakeVideoLinkAttack(5) + "\n\n" +
 
-  // ATTACK 3: Image Link Bomb
   "🔥 ATTACK 3: Fake Image Link Burst (Thumbnail Gen)\n" +
-  fakeImageLinkAttack(20) + "\n\n" +
+  fakeImageLinkAttack(10) + "\n\n" +
 
-  // ATTACK 4: Protocol Parsing Chaos
+
   "🔥 ATTACK 4: Protocol Parsing Attack\n" +
   protocolParsingAttack() + "\n\n" +
 
-  // ATTACK 5: Message Burst Simulation
+  
   "🔥 ATTACK 5: Large Burst Messages\n" +
-  burstMessagePayload(100, 50) + "\n\n" +
+  burstMessagePayload(50, 25) + "\n\n" +
 
-  // ATTACK 6: Long Line with Media
+  
   "🔥 ATTACK 6: Massive Line + Media Links\n" +
   longLineWithMediaLinks(150) + "\n\n" +
 
-  // ATTACK 7: Bidi + Media Chaos
+  
   "🔥 ATTACK 7: Bidirectional + Media Chaos\n" +
   bidiMediaChaos() + "\n\n" +
 
-  // ATTACK 8: Emoji + Media
   "🔥 ATTACK 8: Emoji + Media Link Mixing\n" +
-  emojiMediaMixing(100) + "\n\n" +
+  emojiMediaMixing(150) + "\n\n" +
 
-  // ATTACK 9: Script + Media
+  
   "🔥 ATTACK 9: Script Mixing + Media\n" +
-  scriptMediaMixing(100) + "\n\n" +
+  scriptMediaMixing(140) + "\n\n" +
 
-  // ATTACK 10: Nested Isolates
+
   "🔥 ATTACK 10: Nested Isolates + Media\n" +
   nestedIsolatesMedia(50) + "\n\n" +
 
-  // ATTACK 11: Metadata Poisoning
+  
   "🔥 ATTACK 11: Heavy Metadata Poisoning\n" +
   metadataPoisoning() + "\n\n" +
 
-  // ATTACK 12: Protocol Switching
   "🔥 ATTACK 12: Rapid Protocol Switching\n" +
   rapidProtocolSwitching(100) + "\n\n" +
 
