@@ -61,41 +61,41 @@ const EMOJI_VARIANTS = [
 
 // 6. MASSIVE FAKE MEDIA LINKS (Parser Stress)
 const FAKE_VIDEO_URLS = [
-  "https://example.com/video-" + "A".repeat(300) + ".mp4",
-  "https://cdn.example.com/media/" + "B".repeat(300) + "/video.mov",
-  "https://storage.com/v1/bucket/" + "C".repeat(300) + ".avi",
-  "file:///storage/emulated/0/DCIM/" + "D".repeat(300) + ".webm",
-  "content://media/external/video/" + "E".repeat(300) + ".mkv",
-  "blob:https://example.com/" + "F".repeat(300),
-  "data:video/mp4;base64," + "A".repeat(300),
+  "https://example.com/video-" + "A".repeat(200) + ".mp4",
+  "https://cdn.example.com/media/" + "B".repeat(200) + "/video.mov",
+  "https://storage.com/v1/bucket/" + "C".repeat(200) + ".avi",
+  "file:///storage/emulated/0/DCIM/" + "D".repeat(200) + ".webm",
+  "content://media/external/video/" + "E".repeat(200) + ".mkv",
+  "blob:https://example.com/" + "F".repeat(200),
+  "data:video/mp4;base64," + "A".repeat(200),
 ];
 
 const FAKE_IMAGE_URLS = [
-  "https://example.com/image-" + "X".repeat(300) + ".jpg",
-  "https://images.com/photo/" + "Y".repeat(300) + ".png",
-  "https://cdn.example.com/" + "Z".repeat(300) + ".webp",
-  "file:///sdcard/Pictures/" + "W".repeat(300) + ".heic",
-  "content://media/external/images/" + "V".repeat(300) + ".raw",
-  "data:image/jpeg;base64," + "U".repeat(300),
+  "https://example.com/image-" + "X".repeat(200) + ".jpg",
+  "https://images.com/photo/" + "Y".repeat(200) + ".png",
+  "https://cdn.example.com/" + "Z".repeat(200) + ".webp",
+  "file:///sdcard/Pictures/" + "W".repeat(200) + ".heic",
+  "content://media/external/images/" + "V".repeat(200) + ".raw",
+  "data:image/jpeg;base64," + "U".repeat(200),
 ];
 
 // 7. FAKE DOCUMENT LINKS
 const FAKE_DOCUMENT_URLS = [
-  "https://docs.example.com/view/" + "D".repeat(300) + ".pdf",
-  "https://storage.com/documents/" + "C".repeat(300) + ".docx",
-  "https://files.example.com/" + "B".repeat(300) + ".pptx",
-  "file:///system/app/" + "A".repeat(300) + ".apk",
+  "https://docs.example.com/view/" + "D".repeat(200) + ".pdf",
+  "https://storage.com/documents/" + "C".repeat(200) + ".docx",
+  "https://files.example.com/" + "B".repeat(200) + ".pptx",
+  "file:///system/app/" + "A".repeat(00) + ".apk",
 ];
 
 // 8. MALFORMED PROTOCOL STRINGS
 const PROTOCOL_ATTACKS = [
-  "http://".repeat(300),
-  "https://".repeat(300),
-  "://".repeat(300),
-  "file://".repeat(300),
-  "ftp://".repeat(300),
-  "smb://".repeat(300),
-  "rtmp://".repeat(300),
+  "http://".repeat(200),
+  "https://".repeat(200),
+  "://".repeat(200),
+  "file://".repeat(200),
+  "ftp://".repeat(200),
+  "smb://".repeat(200),
+  "rtmp://".repeat(200),
 ];
 
 // 9. SCRIPTS
@@ -139,8 +139,8 @@ function fakeVideoLinkAttack(count = 50) {
   for (let i = 0; i < count; i++) {
     const url = FAKE_VIDEO_URLS[rand(FAKE_VIDEO_URLS.length)];
     const metadata = {
-      title: "A".repeat(300),
-      description: "B".repeat(300),
+      title: "A".repeat(200),
+      description: "B".repeat(200),
       duration: "9999999999",
       width: "99999999",
       height: "99999999",
@@ -170,9 +170,9 @@ function fakeImageLinkAttack(count = 100) {
     const exifPayload = 
       "Exif\x00\x00II" +
       "*\x00\x08\x00\x00\x00" +
-      "A".repeat(300) +
-      "B".repeat(300) +
-      "C".repeat(300);
+      "A".repeat(200) +
+      "B".repeat(200) +
+      "C".repeat(200);
     
     payload += url + "\n";
     payload += exifPayload + "\n";
@@ -191,7 +191,7 @@ function protocolParsingAttack() {
   
   for (let i = 0; i < 20; i++) {
     payload += PROTOCOL_ATTACKS[rand(PROTOCOL_ATTACKS.length)];
-    payload += "A".repeat(300);
+    payload += "A".repeat(200);
     payload += "\n";
   }
   
@@ -350,21 +350,21 @@ function metadataPoisoning() {
   let payload = "";
   
   const poisonedMetadata = {
-    title: "A".repeat(300),
-    description: "B".repeat(300),
+    title: "A".repeat(200),
+    description: "B".repeat(200),
     keywords: FAKE_IMAGE_URLS.concat(FAKE_VIDEO_URLS).join(","),
-    author: "C".repeat(300),
-    copyright: "D".repeat(300),
+    author: "C".repeat(200),
+    copyright: "D".repeat(200),
     exif: {
-      model: "E".repeat(300),
-      lens: "F".repeat(300),
-      location: "G".repeat(300)
+      model: "E".repeat(200),
+      lens: "F".repeat(200),
+      location: "G".repeat(200)
     },
     iptc: {
-      caption: "H".repeat(300),
-      keywords: "I".repeat(300)
+      caption: "H".repeat(200),
+      keywords: "I".repeat(200)
     },
-    xmp: "J".repeat(300)
+    xmp: "J".repeat(200)
   };
   
   payload += JSON.stringify(poisonedMetadata) + "\n";
@@ -387,7 +387,7 @@ function rapidProtocolSwitching(switches = 120) {
   
   for (let i = 0; i < switches; i++) {
     payload += protocols[rand(protocols.length)];
-    payload += "A".repeat(300);
+    payload += "A".repeat(200);
     payload += "\n";
   }
   
