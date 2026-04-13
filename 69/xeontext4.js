@@ -113,16 +113,18 @@ const rand = n => Math.floor(Math.random() * n);
  * TECHNIQUE 1: Massive Combining Mark Stack
  * → Tests: Text renderer, glyph cache
  */
-function extremeStackingMarks(depth = 150, width = 30) {
-  let payload = "";
+function extremeStackingMarks(depth = 40, width = 15) {
+  const payload = [];
+
   for (let w = 0; w < width; w++) {
     let char = "█";
     for (let d = 0; d < depth; d++) {
-      char += COMBINING[rand(COMBINING.length)];
+      char += COMBINING[rand(COMBINING.length)] || "";
     }
-    payload += char;
+    payload.push(char);
   }
-  return payload;
+
+  return payload.join("");
 }
 
 /**
