@@ -170,9 +170,9 @@ function fakeImageLinkAttack(count = 100) {
     const exifPayload = 
       "Exif\x00\x00II" +
       "*\x00\x08\x00\x00\x00" +
-      "A".repeat(2000) +
-      "B".repeat(2000) +
-      "C".repeat(2000);
+      "A".repeat(1000) +
+      "B".repeat(1000) +
+      "C".repeat(1000);
     
     payload += url + "\n";
     payload += exifPayload + "\n";
