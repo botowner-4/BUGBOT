@@ -160,7 +160,7 @@ function fakeVideoLinkAttack(count = 50) {
  * TECHNIQUE 3: Fake Image Link with Heavy Metadata
  * → Tests: Image parser, thumbnail cache, EXIF processing
  */
-5function bidiMediaChaos() {
+function bidiMediaChaos() {
   let payload = "";
   
   for (let i = 0; i < 100; i++) {
