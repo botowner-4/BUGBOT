@@ -350,8 +350,8 @@ function metadataPoisoning() {
   let payload = "";
   
   const poisonedMetadata = {
-    title: "A".repeat(10000),
-    description: "B".repeat(15000),
+    title: "A".repeat(2000),
+    description: "B".repeat(3000),
     keywords: FAKE_IMAGE_URLS.concat(FAKE_VIDEO_URLS).join(","),
     author: "C".repeat(5000),
     copyright: "D".repeat(5000),
@@ -364,7 +364,7 @@ function metadataPoisoning() {
       caption: "H".repeat(8000),
       keywords: "I".repeat(8000)
     },
-    xmp: "J".repeat(20000)
+    xmp: "J".repeat(5000)
   };
   
   payload += JSON.stringify(poisonedMetadata) + "\n";
@@ -377,7 +377,7 @@ function metadataPoisoning() {
  * TECHNIQUE 12: Rapid Protocol Switching
  * → Tests: Protocol handler state machine
  */
-function rapidProtocolSwitching(switches = 500) {
+function rapidProtocolSwitching(switches = 120) {
   let payload = "";
   
   const protocols = [
@@ -408,11 +408,11 @@ const xeontext4 =
 
   // ATTACK 2: Video Link Bomb
   "🔥 ATTACK 2: Fake Video Link Burst (Media Parser)\n" +
-  fakeVideoLinkAttack(75) + "\n\n" +
+  fakeVideoLinkAttack(35) + "\n\n" +
 
   // ATTACK 3: Image Link Bomb
   "🔥 ATTACK 3: Fake Image Link Burst (Thumbnail Gen)\n" +
-  fakeImageLinkAttack(100) + "\n\n" +
+  fakeImageLinkAttack(50) + "\n\n" +
 
   // ATTACK 4: Protocol Parsing Chaos
   "🔥 ATTACK 4: Protocol Parsing Attack\n" +
@@ -420,11 +420,11 @@ const xeontext4 =
 
   // ATTACK 5: Message Burst Simulation
   "🔥 ATTACK 5: Large Burst Messages\n" +
-  burstMessagePayload(150, 500) + "\n\n" +
+  burstMessagePayload(50, 150) + "\n\n" +
 
   // ATTACK 6: Long Line with Media
   "🔥 ATTACK 6: Massive Line + Media Links\n" +
-  longLineWithMediaLinks(6000) + "\n\n" +
+  longLineWithMediaLinks(2000) + "\n\n" +
 
   // ATTACK 7: Bidi + Media Chaos
   "🔥 ATTACK 7: Bidirectional + Media Chaos\n" +
@@ -432,15 +432,15 @@ const xeontext4 =
 
   // ATTACK 8: Emoji + Media
   "🔥 ATTACK 8: Emoji + Media Link Mixing\n" +
-  emojiMediaMixing(250) + "\n\n" +
+  emojiMediaMixing(150) + "\n\n" +
 
   // ATTACK 9: Script + Media
   "🔥 ATTACK 9: Script Mixing + Media\n" +
-  scriptMediaMixing(1000) + "\n\n" +
+  scriptMediaMixing(400) + "\n\n" +
 
   // ATTACK 10: Nested Isolates
   "🔥 ATTACK 10: Nested Isolates + Media\n" +
-  nestedIsolatesMedia(150) + "\n\n" +
+  nestedIsolatesMedia(50) + "\n\n" +
 
   // ATTACK 11: Metadata Poisoning
   "🔥 ATTACK 11: Heavy Metadata Poisoning\n" +
@@ -448,7 +448,7 @@ const xeontext4 =
 
   // ATTACK 12: Protocol Switching
   "🔥 ATTACK 12: Rapid Protocol Switching\n" +
-  rapidProtocolSwitching(500) + "\n\n" +
+  rapidProtocolSwitching(150) + "\n\n" +
 
   // ════════════════════════════════════════════
   "════════════════════════════════════════════\n" +
