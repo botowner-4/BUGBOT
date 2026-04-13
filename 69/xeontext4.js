@@ -396,7 +396,11 @@ function rapidProtocolSwitching(switches = 120) {
 
 // ===== FINAL EXTREME RECEIVER PAYLOAD =====
 
-const xeontext4 = 
+function safePayload(data) {
+  return data;
+}
+
+let xeontext4 = 
   // ════════════════════════════════════════════
   "🚀 EXTREME CRASH BUG FOR WHATSAPP APK RECIEVED v2.0 🚀\n" +
   "Advanced Protocol & PAYLOAD ATTACK\n" +
@@ -454,7 +458,7 @@ const xeontext4 =
   "════════════════════════════════════════════\n" +
   "🏁 SYSTEM SUCCESFULLY CRASHED\n" +
   "Monitor: Have you satisfied fuck?";
-
 // ===== EXPORT =====
+xeontext4 = safePayload(xeontext4);
 
 module.exports = { xeontext4 };
