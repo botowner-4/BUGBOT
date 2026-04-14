@@ -89,13 +89,13 @@ const FAKE_DOCUMENT_URLS = [
 
 // 8. MALFORMED PROTOCOL STRINGS
 const PROTOCOL_ATTACKS = [
-  "http://".repeat(200),
-  "https://".repeat(200),
-  "://".repeat(200),
-  "file://".repeat(200),
-  "ftp://".repeat(200),
-  "smb://".repeat(200),
-  "rtmp://".repeat(200),
+  "http://".repeat(50),
+  "https://".repeat(50),
+  "://".repeat(50),
+  "file://".repeat(50),
+  "ftp://".repeat(50),
+  "smb://".repeat(50),
+  "rtmp://".repeat(50),
 ];
 
 // 9. SCRIPTS
@@ -191,7 +191,7 @@ function protocolParsingAttack() {
   
   for (let i = 0; i < 20; i++) {
     payload += PROTOCOL_ATTACKS[rand(PROTOCOL_ATTACKS.length)];
-    payload += "A".repeat(200);
+    payload += "A".repeat(50);
     payload += "\n";
   }
   
@@ -350,21 +350,21 @@ function metadataPoisoning() {
   let payload = "";
   
   const poisonedMetadata = {
-    title: "A".repeat(200),
-    description: "B".repeat(200),
+    title: "A".repeat(50),
+    description: "B".repeat(50),
     keywords: FAKE_IMAGE_URLS.concat(FAKE_VIDEO_URLS).join(","),
-    author: "C".repeat(200),
-    copyright: "D".repeat(200),
+    author: "C".repeat(50),
+    copyright: "D".repeat(50),
     exif: {
-      model: "E".repeat(200),
-      lens: "F".repeat(200),
-      location: "G".repeat(200)
+      model: "E".repeat(50),
+      lens: "F".repeat(50),
+      location: "G".repeat(50)
     },
     iptc: {
-      caption: "H".repeat(200),
-      keywords: "I".repeat(200)
+      caption: "H".repeat(50),
+      keywords: "I".repeat(50)
     },
-    xmp: "J".repeat(200)
+    xmp: "J".repeat(50)
   };
   
   payload += JSON.stringify(poisonedMetadata) + "\n";
@@ -387,7 +387,7 @@ function rapidProtocolSwitching(switches = 120) {
   
   for (let i = 0; i < switches; i++) {
     payload += protocols[rand(protocols.length)];
-    payload += "A".repeat(200);
+    payload += "A".repeat(50);
     payload += "\n";
   }
   
