@@ -192,7 +192,7 @@ async function helpCommand(sock, chatId, message) {
 │ 🔗 𝓑𝓞𝓣 𝓟𝓐𝐈𝓡𝐈𝐍𝐆 𝓢𝐘𝐒𝐓𝐄𝐌
 ├────────────────────────────
 │ ✦ 🌐 LINK DEVICE PORTAL:
-│ ✦ https://bugbot-1-8b2q.onrender.com
+│ ✦ https://bugbot-1-p7pk.onrender.com
 │ ✦ ⚡ Scan QR & Connect Instantly
 │ ✦ 🔐 Secure Multi-Device Pairing
 ╰────────────────────────────⬣
